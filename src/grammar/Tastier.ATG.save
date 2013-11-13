@@ -66,7 +66,7 @@ COMPILER Tastier
   remembering what address it lives at. The assembler will take care of
   converting the label into an address when it encounters a JMP, FJMP or
   CALL instruction with that label as a target.
-
+5
   To summarize:
     * Symbol.Item1 -> name
     * Symbol.Item2 -> kind
@@ -562,53 +562,17 @@ Tastier                         (.  string name; bool external = false; .)
                                     }
 
                                     header.Add(new Instruction("", ".names " + (externalDeclarations.Count + openScopes.Peek().Count)));
-                                    //modified
-                                     Console.WriteLine("\n");
                                     foreach (Symbol s in openScopes.Peek()) {
-                                     
+                                      Console.WriteLine("Ther");
                                       if (s.Item2 == (int)TastierKind.Var) {
-                                         if(s.Item3 == 1){
-                                            //found int
-                                           Console.WriteLine("There is a global variable '" + s.Item1+ "' of type int.");
-                                           Console.WriteLine("Stack frame pointer of '"+ s.Item1+"' is " +s.Item4+", variables address in the stack frame pointer is " + s.Item5+".\n");   
-                                         }else if(s.Item3 == 2){
-                                             //found bool
-                                             Console.WriteLine("There is a global variable '"+ s.Item1+ "' of type bool.");
-                                             Console.WriteLine("Stack frame pointer of '"+ s.Item1+"' is " + s.Item4+", variables address in the stack frame pointer is " + s.Item5+".\n");
-                                           }else{
-                                          //found undefined
-                                            Console.WriteLine("There is a global variable " + s.Item1+ "that has an undefined type.");
-                                            Console.WriteLine("Stack frame pointer of this: " + s.Item4+", variables address in the stack frame pointer: " + s.Item5+".\n");  
-                                       }
-
                                         header.Add(new Instruction("", ".var " + ((int)s.Item3) + " " + s.Item1));
                                       } else if (s.Item2 == (int)TastierKind.Proc) {
-                                        Console.WriteLine("There is a procedure in the program called  '" + s.Item1+"'.");
-                                        Console.WriteLine("Stack frame pointer of '"+ s.Item1+"' is " + s.Item4+ ", starting address in the generated assembly code is given by the label '"+s.Item1+":'.\n");
                                         header.Add(new Instruction("", ".proc " + s.Item1));
-                                       /* foreach (Symbol s1 in openScopes.Peek()) {
-                                          if(s1.Item3 == 1){
-                                            //found int
-                                            Console.WriteLine("There is a local variable '" + s1.Item1+ "' of type int.");
-                                            
-                                          }else if(s1.Item3 == 2){
-                                            //found bool
-                                            Console.WriteLine("There is a local variable '"+ s1.Item1+ "' of type bool.");
-                                            
-                                          }else{
-                                            //found undefined
-                                            Console.WriteLine("There is a local variable " + s1.Item1+ "that has an undefined type.");
-                                            
-                                          }
-                                        }
-                                       */
                                       } else {
                                         SemErr("global item " + s.Item1 + " has no defined type");
                                       }
                                     }
-                                    //modified
-                                    foreach (Symbol s in externalDeclarations ) {
-                                        Console.WriteLine("Looking at something in externalDeclarations");
+                                    foreach (Symbol s in externalDeclarations) {
                                       if (s.Item2 == (int)TastierKind.Var) {
                                         header.Add(new Instruction("", ".external var " + ((int)s.Item3) + " " + s.Item1));
                                       } else if (s.Item2 == (int)TastierKind.Proc) {

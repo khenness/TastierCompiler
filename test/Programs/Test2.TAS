@@ -3,23 +3,20 @@
 // number, the sum of all integers up to that number
 
 program Test {
-  int i;
-  bool b;  
-
+  
   void SumUp() {
-    int sum;
-    sum = 0;
-    while (i > 0) { sum = sum + i; i = i - 1; }
-    write sum;
+  int i;
+  i=0;
+  while(i<0){
+
+  }
   }
 
   void Main() {
-    read i;
-    while (i > 0) {
-      SumUp();
-      read i;
+    
     }
-  }
-}
+
+ }
+
 
 

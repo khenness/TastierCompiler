@@ -5,11 +5,15 @@ program Test {
 
   void Main() {
     read i;
-    int sum;
-    sum = 0;
-    while (i > 0) {
-      sum = sum + i; i = i - 1;
+    if (i > 10) {
+      int sum;
+      sum = 0;
+      while (i > 0) {
+        sum = sum + i; i = i - 1;
+      }
+      write sum;
+    } else {
+      write i;
     }
-    write sum;
   }
 }

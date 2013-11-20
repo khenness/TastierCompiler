@@ -484,10 +484,20 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                     openLabels.Push(generateLabel());
                                     program.Add(new Instruction("", "FJmp " + openLabels.Peek()));
                                 .)
-      Stat                      (.  program.Add(new Instruction(openLabels.Pop(), "Nop")); .)
+      Stat                      (.
+                                    Instruction startOfElse = new Instruction(openLabels.Pop(), "Nop");
+                                    /*
+                                       If we got into the "if", we need to
+                                       jump over the "else" so that it
+                                       doesn't get executed.
+                                    */
+                                    openLabels.Push(generateLabel());
+                                    program.Add(new Instruction("", "Jmp " + openLabels.Peek()));
+                                    program.Add(startOfElse);
+                                .)
       [ "else"
         Stat
-      ]
+      ]                         (.  program.Add(new Instruction(openLabels.Pop(), "Nop")); .)
 
 | "while"                       (.  string loopStartLabel = generateLabel();
                                     openLabels.Push(generateLabel()); //second label is for the loop end

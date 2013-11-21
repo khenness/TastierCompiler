@@ -441,7 +441,7 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                       SemErr("reference to undefined variable " + name);
                                     }
                                 .)
-  ( '='                         (.
+  ( ":="                         (.
                                     if ((TastierKind)sym.Item2 != TastierKind.Var) {
                                       SemErr("cannot assign to non-variable");
                                     }

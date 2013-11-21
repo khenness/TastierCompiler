@@ -892,7 +892,7 @@ public class Errors {
 			case 14: s = "\"==\" expected"; break;
 			case 15: s = "\"<\" expected"; break;
 			case 16: s = "\">\" expected"; break;
-			case 17: s = "\"=\" expected"; break;
+			case 17: s = "\":=\" expected"; break;
 			case 18: s = "\";\" expected"; break;
 			case 19: s = "\"if\" expected"; break;
 			case 20: s = "\"else\" expected"; break;

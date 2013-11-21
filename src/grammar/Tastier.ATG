@@ -411,7 +411,7 @@ ProcDecl                        (.  string name; string label; Scope currentScop
 
 RelOp<out Instruction inst>
 =                               (.  inst = new Instruction("", "Equ"); .)
-  ( "=="
+  ( "="
   | '<'                         (.  inst = new Instruction("", "Lss"); .)
   | '>'                         (.  inst = new Instruction("", "Gtr"); .)
   ).

@@ -448,6 +448,8 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			 type = TastierType.Integer;
 			}
 			program.Add(new Instruction("", "Neg"));
+			program.Add(new Instruction("", "Const 1"));
+			program.Add(new Instruction("", "Add"));
 			
 		} else if (la.kind == 5) {
 			Get();
@@ -889,7 +891,7 @@ public class Errors {
 			case 11: s = "\")\" expected"; break;
 			case 12: s = "\"{\" expected"; break;
 			case 13: s = "\"}\" expected"; break;
-			case 14: s = "\"==\" expected"; break;
+			case 14: s = "\"=\" expected"; break;
 			case 15: s = "\"<\" expected"; break;
 			case 16: s = "\">\" expected"; break;
 			case 17: s = "\":=\" expected"; break;

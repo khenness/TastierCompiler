@@ -11,6 +11,11 @@ program Test {
     sum := 0;
     while (i > 0) { sum := sum + i; i := i - 1; }
     write sum;
+    int test;
+    test := 9999;
+    while(test = 1){
+      write test;
+    }
   }
 
   void Main() {

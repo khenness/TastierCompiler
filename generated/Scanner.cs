@@ -238,11 +238,11 @@ public class Scanner {
 		start[123] = 9; 
 		start[125] = 10; 
 		start[61] = 11; 
-		start[60] = 13; 
-		start[62] = 14; 
-		start[58] = 15; 
-		start[59] = 17; 
-		start[44] = 18; 
+		start[60] = 12; 
+		start[62] = 13; 
+		start[58] = 14; 
+		start[59] = 16; 
+		start[44] = 17; 
 		start[Buffer.EOF] = -1;
 
 	}
@@ -420,22 +420,19 @@ public class Scanner {
 			case 10:
 				{t.kind = 13; break;}
 			case 11:
-				if (ch == '=') {AddCh(); goto case 12;}
-				else {goto case 0;}
-			case 12:
 				{t.kind = 14; break;}
-			case 13:
+			case 12:
 				{t.kind = 15; break;}
-			case 14:
+			case 13:
 				{t.kind = 16; break;}
-			case 15:
-				if (ch == '=') {AddCh(); goto case 16;}
+			case 14:
+				if (ch == '=') {AddCh(); goto case 15;}
 				else {goto case 0;}
-			case 16:
+			case 15:
 				{t.kind = 17; break;}
-			case 17:
+			case 16:
 				{t.kind = 18; break;}
-			case 18:
+			case 17:
 				{t.kind = 27; break;}
 
 		}

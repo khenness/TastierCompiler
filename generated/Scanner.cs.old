@@ -237,11 +237,12 @@ public class Scanner {
 		start[41] = 8; 
 		start[123] = 9; 
 		start[125] = 10; 
-		start[61] = 16; 
-		start[60] = 12; 
-		start[62] = 13; 
-		start[59] = 14; 
-		start[44] = 15; 
+		start[61] = 11; 
+		start[60] = 13; 
+		start[62] = 14; 
+		start[58] = 15; 
+		start[59] = 17; 
+		start[44] = 18; 
 		start[Buffer.EOF] = -1;
 
 	}
@@ -419,19 +420,23 @@ public class Scanner {
 			case 10:
 				{t.kind = 13; break;}
 			case 11:
-				{t.kind = 14; break;}
+				if (ch == '=') {AddCh(); goto case 12;}
+				else {goto case 0;}
 			case 12:
-				{t.kind = 15; break;}
+				{t.kind = 14; break;}
 			case 13:
-				{t.kind = 16; break;}
+				{t.kind = 15; break;}
 			case 14:
-				{t.kind = 18; break;}
+				{t.kind = 16; break;}
 			case 15:
-				{t.kind = 27; break;}
+				if (ch == '=') {AddCh(); goto case 16;}
+				else {goto case 0;}
 			case 16:
-				recEnd = pos; recKind = 17;
-				if (ch == '=') {AddCh(); goto case 11;}
-				else {t.kind = 17; break;}
+				{t.kind = 17; break;}
+			case 17:
+				{t.kind = 18; break;}
+			case 18:
+				{t.kind = 27; break;}
 
 		}
 		t.val = new String(tval, 0, tlen);

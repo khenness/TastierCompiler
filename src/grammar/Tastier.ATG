@@ -334,6 +334,8 @@ Factor<out TastierType type>    (.  int n; Symbol sym; string name; .)
                                       type = TastierType.Integer;
                                     }
                                     program.Add(new Instruction("", "Neg"));
+                                    program.Add(new Instruction("", "Const 1"));
+                                    program.Add(new Instruction("", "Add"));
                                 .)
   | "true"                      (.  program.Add(new Instruction("", "Const " + 1)); type = TastierType.Boolean; .)
   | "false"                     (.  program.Add(new Instruction("", "Const " + 0)); type = TastierType.Boolean; .)

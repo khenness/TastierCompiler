@@ -4,6 +4,7 @@ program Test {
   int i;
 
   void Main() {
+    write -3;
     read i;
     if (i > 10) {
       int sum;

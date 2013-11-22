@@ -403,8 +403,7 @@ ProcDecl                        (.  string name; string label; Scope currentScop
                                     openScopes.Pop();
                                     // now we can generate the Enter instruction properly
                                     program[enterInstLocation] =
-                                      new Instruction(label, "Enter " +
-                                                      currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
+                                      new Instruction(label, "Enter " + currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
                                     openProcedureDeclarations.Pop();
                                 .).
 

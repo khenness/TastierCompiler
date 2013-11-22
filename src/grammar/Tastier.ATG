@@ -404,7 +404,7 @@ ProcDecl                        (.  string name; string label; Scope currentScop
                                     // now we can generate the Enter instruction properly
                                     program[enterInstLocation] =
                                       new Instruction(label, "Enter " +
-                                                      currentScope.Count(s => s.Item2 == (int)TastierKind.Var));
+                                                      currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
                                     openProcedureDeclarations.Pop();
                                 .).
 
@@ -621,7 +621,7 @@ Tastier                         (.  string name; bool external = false; .)
                                       } else if (s.Item2 == (int)TastierKind.Const) {
                                          Console.WriteLine("I know its a const called " + s.Item1 + "");
                                       }else{
-                                         SemErr("global item " + s.Item1 + " has no defined type");
+                                         SemErr("global item " + s.Item1 + " has no defined type. It has a type of "+ s.Item2);
                                        }
                                     }
                                     //modified
@@ -675,8 +675,8 @@ ConstDecl<bool external>        (.
   Ident<out name>              (. 
                                      sym = lookup(openScopes, name);
                                    
-                                      sym = new Symbol(name, (int)TastierKind.Const,(int)type,openScopes.Count-1, currentScope.Count(s => s.Item2 == (int)TastierKind.Const));
-                                      currentScope.Push(sym); //  externalDeclarations.Push(sym);
+                                      sym = new Symbol(name, (int)TastierKind.Const,(int)type,openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
+                                      externalDeclarations.Push(sym);
 
                                   //  }
                                  .)
@@ -706,8 +706,8 @@ ConstDecl<bool external>        (.
    {',' Type<out type>
         Ident<out name>         (.
                                    
-                                   sym = new Symbol(name, (int)TastierKind.Const,(int)type,openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const));
-                                   currentScope.Push(sym); //  externalDeclarations.Push(sym);
+                                   sym = new Symbol(name, (int)TastierKind.Const,(int)type,openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
+                                   externalDeclarations.Push(sym);
 
                                     
                                  .)
@@ -746,14 +746,14 @@ VarDecl<bool external>          (.
                                     if (external) {
                                       externalDeclarations.Push(new Symbol(name, (int)TastierKind.Var, (int)type, 0, 0));
                                     } else {
-                                      currentScope.Push(new Symbol(name, (int)TastierKind.Var, (int)type, openScopes.Count-1, currentScope.Count(s => s.Item2 == (int)TastierKind.Var)));
+                                      currentScope.Push(new Symbol(name, (int)TastierKind.Var, (int)type, openScopes.Count-1, currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var)));
                                     }
                                 .)
   { ',' Ident<out name>         (.
                                     if (external) {
                                       externalDeclarations.Push(new Symbol(name, (int)TastierKind.Var, (int)type, 0, 0));
                                     } else {
-                                      currentScope.Push(new Symbol(name, (int)TastierKind.Var, (int)type, openScopes.Count-1, currentScope.Count(s => s.Item2 == (int)TastierKind.Var)));
+                                      currentScope.Push(new Symbol(name, (int)TastierKind.Var, (int)type, openScopes.Count-1, currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var)));
                                     }
                                 .)
   } ';'.

@@ -1,7 +1,7 @@
 COMPILER Tastier
 
 /*
-  First, let's declare all the types we're going to use.
+   First, let's declare all the types we're going to use.
 */
 
   enum TastierType : int {   // types for variables

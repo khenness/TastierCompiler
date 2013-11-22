@@ -571,7 +571,7 @@ Tastier                         (.  string name; bool external = false; .)
                                     openScopes.Push(new Scope());
                                 .)
   '{'
-  { VarDecl<external> | ProcDecl | ExternDecl }
+  { VarDecl<external> | ProcDecl | ExternDecl } //modified   | ConstDecl<external>
   '}'                           (.
                                     if (openScopes.Peek().Count == 0) {
                                       Warn("Warning: Program " + name + " is empty ");
@@ -663,22 +663,24 @@ Type<out TastierType type>
 
 //ConstDecl = "const" Ident<out name> Type<out type> ":=" value {',' Ident<out name> Type<out type> ":=" value } ";"
 //modified
-
-ConstDecl<bool external>        (. string name; TastierType type; Scope currentScope = openScopes.Peek(); .)
 //you only get one of these per program, thats what i've decided. You declare all your constants together.
+
+ConstDecl<bool external>        (. 
+                                  string name; TastierType type; Scope currentScope = openScopes.Peek(); 
+                                .)
 = "const"
   Type<out type>
-  Ident<out name>               (. 
-                                    sym = lookup(openScopes, name);
+  Ident<out name>              (. 
+                                     sym = lookup(openScopes, name);
                                     if (external) {
-                                      sym = new Symbol(name, (int)TastierKind.Const, (int)type, 0, 0)
+                                      sym = new Symbol(name, (int)TastierKind.Const, (int)type, 0, 0);
                                       externalDeclarations.Push(sym);
                                     } else {
-                                      sym = new Symbol(name, (int)TastierKind.Const,(int)type,openScopes.Count-1, currentScope.Count(s => s.Item2 == (int)TastierKind.Const))
+                                      sym = new Symbol(name, (int)TastierKind.Const,(int)type,openScopes.Count-1, currentScope.Count(s => s.Item2 == (int)TastierKind.Const));
                                       currentScope.Push(sym);
                                     }
                                  .)
-   ":="                         (.
+   ":="                           (.
                                     if ((TastierKind)sym.Item2 != TastierKind.Const) {
                                       SemErr("cannot assign to non-variable");
                                     }
@@ -705,10 +707,10 @@ ConstDecl<bool external>        (. string name; TastierType type; Scope currentS
         Ident<out name>         (.
                                     
                                     if (external) {
-                                      sym = new Symbol(name, (int)TastierKind.Const, (int)type, 0, 0)
+                                      sym = new Symbol(name, (int)TastierKind.Const, (int)type, 0, 0);
                                       externalDeclarations.Push(sym);
                                     } else {
-                                      sym = new Symbol(name, (int)TastierKind.Const,(int)type,openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const))
+                                      sym = new Symbol(name, (int)TastierKind.Const,(int)type,openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const));
                                       currentScope.Push(sym);
                                     }
                                  .)
@@ -765,6 +767,7 @@ VarDecl<bool external>          (.
 ExternDecl                      (.  string name; bool external = true; Scope currentScope = openScopes.Peek(); int count = currentScope.Count; .)
 = "external"
   ( VarDecl<external>
+  | ConstDecl<external>
   | "procedure" Ident<out name> ';'
                                 (.  externalDeclarations.Push(new Symbol(name, (int)TastierKind.Proc, (int)TastierType.Undefined, 1, -1)); .)
   ) .

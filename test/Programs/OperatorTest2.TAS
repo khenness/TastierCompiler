@@ -3,7 +3,7 @@
 // number, the sum of all integers up to that number
 
 program Test {
-    int a;  
+    const int a;  
 
   void Main() {
     

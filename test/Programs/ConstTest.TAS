@@ -4,14 +4,19 @@
 
 
 program Test {
-   const int y = 1;  
-   int x;
+   const int x := 1;  
+   
   void Main() {
     
-    x := y;
+    int a;
+    a := 1;
+    int b;
+    b := 2;
+    int c;
+    c := 3;
 
-    write y;
-    write x;
+    write a, b;
+    
   }
 }
 

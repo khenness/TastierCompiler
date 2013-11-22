@@ -2,15 +2,16 @@
 // It reads a sequence of numbers from the input file and computes, for each
 // number, the sum of all integers up to that number
 
+
 program Test {
-    const int c := 1;  
-   
+   const int y = 1;  
+   int x;
   void Main() {
     
-    int v;
-    v := 99;
-    write v;
-    write c;
+    x := y;
+
+    write y;
+    write x;
   }
 }
 

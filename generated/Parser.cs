@@ -918,10 +918,10 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		}
 		if (sym.Item4 == 0) {
 		//  if (isExternal) {
-		 //  program.Add(new Instruction("", "StoG " + sym.Item1));
+		   program.Add(new Instruction("", "StoG " + sym.Item1));
 		   // if the symbol is external, we also store it by name. The linker will resolve the name to an address.
 		//  } else {
-		   program.Add(new Instruction("", "StoG " + (sym.Item5+3)));
+		//    program.Add(new Instruction("", "StoG " + (sym.Item5+3)));
 		//  }
 		}
 		else {
@@ -949,10 +949,10 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			}
 			if (sym.Item4 == 0) {
 			// if (isExternal) {
-			   //program.Add(new Instruction("", "StoG " + sym.Item1));
+			   program.Add(new Instruction("", "StoG " + sym.Item1));
 			   // if the symbol is external, we also store it by name. The linker will resolve the name to an address.
 			// } else {
-			   program.Add(new Instruction("", "StoG " + (sym.Item5+3)));
+			//           program.Add(new Instruction("", "StoG " + (sym.Item5+3)));
 			//}
 			}
 			else {

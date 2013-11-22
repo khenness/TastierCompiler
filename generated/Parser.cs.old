@@ -777,8 +777,10 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 				VarDecl(external);
 			} else if (la.kind == 9) {
 				ProcDecl();
-			} else {
+			} else if (la.kind == 32) {
 				ExternDecl();
+			} else {
+				ConstDecl(external);
 			}
 		}
 		Expect(13);
@@ -827,9 +829,11 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		     }
 		   }
 		  */
-		 } else {
-		   SemErr("global item " + s.Item1 + " has no defined type");
-		 }
+		 } else if (s.Item2 == (int)TastierKind.Const) {
+		   SemErr("I know its a const called " + s.Item1 + "");
+		 }else{
+		    SemErr("global item " + s.Item1 + " has no defined type");
+		  }
 		}
 		//modified
 		foreach (Symbol s in externalDeclarations ) {
@@ -852,25 +856,12 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		Expect(32);
 		if (la.kind == 28 || la.kind == 29) {
 			VarDecl(external);
-		} else if (la.kind == 30) {
-			ConstDecl(external);
 		} else if (la.kind == 33) {
 			Get();
 			Ident(out name);
 			Expect(21);
 			externalDeclarations.Push(new Symbol(name, (int)TastierKind.Proc, (int)TastierType.Undefined, 1, -1)); 
 		} else SynErr(41);
-	}
-
-	void Type(out TastierType type) {
-		type = TastierType.Undefined; 
-		if (la.kind == 28) {
-			Get();
-			type = TastierType.Integer; 
-		} else if (la.kind == 29) {
-			Get();
-			type = TastierType.Boolean; 
-		} else SynErr(42);
 	}
 
 	void ConstDecl(bool external) {
@@ -927,12 +918,12 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			 SemErr("incompatible types");
 			}
 			if (sym.Item4 == 0) {
-			 if (isExternal) {
-			   program.Add(new Instruction("", "StoG " + sym.Item1));
+			// if (isExternal) {
+			 //  program.Add(new Instruction("", "StoG " + sym.Item1));
 			   // if the symbol is external, we also store it by name. The linker will resolve the name to an address.
-			 } else {
+			// } else {
 			   program.Add(new Instruction("", "StoG " + (sym.Item5+3)));
-			 }
+			//}
 			}
 			else {
 			 int lexicalLevelDifference = Math.Abs(openScopes.Count - sym.Item4)-1;
@@ -941,6 +932,17 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			
 		}
 		Expect(21);
+	}
+
+	void Type(out TastierType type) {
+		type = TastierType.Undefined; 
+		if (la.kind == 28) {
+			Get();
+			type = TastierType.Integer; 
+		} else if (la.kind == 29) {
+			Get();
+			type = TastierType.Boolean; 
+		} else SynErr(42);
 	}
 
 
@@ -960,7 +962,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		{x,T,x,x, x,x,x,x, x,T,x,x, T,x,x,x, x,x,x,x, x,x,T,x, T,T,T,x, T,T,x,x, x,x,x,x},
 		{x,T,x,x, x,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, x,x,T,x, T,T,T,x, x,x,x,x, x,x,x,x},
 		{x,T,x,x, x,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, x,x,T,x, T,T,T,x, T,T,x,x, x,x,x,x},
-		{x,x,x,x, x,x,x,x, x,T,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, T,T,x,x, T,x,x,x}
+		{x,x,x,x, x,x,x,x, x,T,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, T,T,T,x, T,x,x,x}
 
 	};
 } // end Parser

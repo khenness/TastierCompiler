@@ -571,7 +571,7 @@ Tastier                         (.  string name; bool external = false; .)
                                     openScopes.Push(new Scope());
                                 .)
   '{'
-  { VarDecl<external> | ProcDecl | ExternDecl } //modified   | ConstDecl<external>
+  { VarDecl<external> | ProcDecl | ExternDecl | ConstDecl<external> } //modified   | ConstDecl<external>
   '}'                           (.
                                     if (openScopes.Peek().Count == 0) {
                                       Warn("Warning: Program " + name + " is empty ");
@@ -618,9 +618,11 @@ Tastier                         (.  string name; bool external = false; .)
                                           }
                                         }
                                        */
-                                      } else {
-                                        SemErr("global item " + s.Item1 + " has no defined type");
-                                      }
+                                      } else if (s.Item2 == (int)TastierKind.Const) {
+                                         Console.WriteLine("I know its a const called " + s.Item1 + "");
+                                      }else{
+                                         SemErr("global item " + s.Item1 + " has no defined type");
+                                       }
                                     }
                                     //modified
                                     foreach (Symbol s in externalDeclarations ) {
@@ -762,7 +764,6 @@ VarDecl<bool external>          (.
 ExternDecl                      (.  string name; bool external = true; Scope currentScope = openScopes.Peek(); int count = currentScope.Count; .)
 = "external"
   ( VarDecl<external>
-  | ConstDecl<external>
   | "procedure" Ident<out name> ';'
                                 (.  externalDeclarations.Push(new Symbol(name, (int)TastierKind.Proc, (int)TastierType.Undefined, 1, -1)); .)
   ) .

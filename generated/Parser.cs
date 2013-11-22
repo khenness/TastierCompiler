@@ -829,17 +829,32 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		   }
 		  */
 		 } else if (s.Item2 == (int)TastierKind.Const) {
-		    Console.WriteLine("I know its a const called " + s.Item1 + "");
+		   // Console.WriteLine("I know its a const called " + s.Item1 + "");
+		      if(s.Item3 == 1){
+		       //found int
+		        Console.WriteLine("There is a const  '" + s.Item1+ "' of type int.  Variables address in the stack frame pointer is " + s.Item5+".\n");
+		
+		
+		     }else if(s.Item3 == 2){
+		       //found bool
+		       Console.WriteLine("There is a const  '" + s.Item1+ "' of type bool.  Variables address in the stack frame pointer is " + s.Item5+".\n");
+		
+		     }else{
+		       //found undefined
+		       Console.WriteLine("There is a const " + s.Item1+ "that has an undefined type.");
+		
+		     }
+		
 		 }else{
 		    SemErr("global item " + s.Item1 + " has no defined type. It has a type of "+ s.Item2);
 		  }
 		}
 		//modified
 		foreach (Symbol s in externalDeclarations ) {
-		   Console.WriteLine("Looking at something in externalDeclarations");
+		  // Console.WriteLine("Looking at something in externalDeclarations");
 		     if(s.Item3 == 1){
 		       //found int
-		       Console.WriteLine("There is a const  '" + s.Item1+ "' of type int. Variables address in the stack frame pointer is " + s.Item5+".\n");
+		       Console.WriteLine("There is a const  '" + s.Item1+ "' of type int.  Variables address in the stack frame pointer is " + s.Item5+".\n");
 		
 		     }else if(s.Item3 == 2){
 		       //found bool
@@ -887,8 +902,8 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		Ident(out name);
 		sym = lookup(openScopes, name);
 		
-		sym = new Symbol(name, (int)TastierKind.Const,(int)type,openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
-		externalDeclarations.Push(sym);
+		sym = new Symbol(name,(int)TastierKind.Const,(int)type,openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Var || s.Item2 == (int)TastierKind.Const));
+		currentScope.Push(sym);
 		
 		//  }
 		
@@ -903,7 +918,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		}
 		if (sym.Item4 == 0) {
 		//  if (isExternal) {
-		//    program.Add(new Instruction("", "StoG " + sym.Item1));
+		 //  program.Add(new Instruction("", "StoG " + sym.Item1));
 		   // if the symbol is external, we also store it by name. The linker will resolve the name to an address.
 		//  } else {
 		   program.Add(new Instruction("", "StoG " + (sym.Item5+3)));
@@ -919,7 +934,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			Type(out type);
 			Ident(out name);
 			sym = new Symbol(name, (int)TastierKind.Const,(int)type,openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
-			externalDeclarations.Push(sym);
+			currentScope.Push(sym);
 			
 			
 			
@@ -934,7 +949,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			}
 			if (sym.Item4 == 0) {
 			// if (isExternal) {
-			 //  program.Add(new Instruction("", "StoG " + sym.Item1));
+			   //program.Add(new Instruction("", "StoG " + sym.Item1));
 			   // if the symbol is external, we also store it by name. The linker will resolve the name to an address.
 			// } else {
 			   program.Add(new Instruction("", "StoG " + (sym.Item5+3)));

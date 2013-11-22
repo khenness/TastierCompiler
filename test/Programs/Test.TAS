@@ -3,7 +3,8 @@
 // number, the sum of all integers up to that number
 
 program Test {
-  const int x:= 99, y:= 88;
+  const bool x:= True, bool z := False;
+  
   int i;
   bool b;  
 

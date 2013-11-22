@@ -1,0 +1,41 @@
+// Kevin Hennessy 11726665 Demo file.
+
+//  What I did:
+//  1) Equality operator replaced
+//  2) Relational operators added
+//  3) Write statement writes multiple values
+//  4) Grammar for the constants added. (I was unable to get them to work.)
+//
+
+// Program output -> "1, 2, 3, 4, 5" 
+
+program Test {
+   
+    const int a := 6, int b := 9;    
+    int c, d;
+
+  void Main() {
+    int one;
+    one := 1;
+    int two;
+    two :=2;
+    int three;
+    three := 3;
+
+    if(1 != 0) {
+      write one;
+    }
+    if(1 <= 1) {
+      write two;
+    }
+    if( 1>=1) {
+     write three;
+    }
+    c := 4;
+    d := 5;
+    write c, d;    
+    
+  }
+}
+
+

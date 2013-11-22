@@ -15,7 +15,7 @@ program Test {
     int c;
     c := 3;
 
-    write a, b;
+    write a, b, c;
     
   }
 }

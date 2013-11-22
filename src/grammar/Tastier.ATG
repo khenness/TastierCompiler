@@ -553,12 +553,20 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                 .)
 
 | "write"
-  Expr<out type> ';'            (.
+  Expr<out type>               (.
                                     if (type != TastierType.Integer) {
                                       SemErr("integer type expected");
                                     }
                                     program.Add(new Instruction("", "Write"));
                                 .)
+{  ',' Expr<out type>             (.
+                                    if (type != TastierType.Integer) {
+                                      SemErr("integer type expected");
+                                    }
+                                    program.Add(new Instruction("", "Write"));
+                                .)
+}';'
+
 
 | '{' { Stat | VarDecl<external> } '}' .
 

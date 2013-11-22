@@ -1,5 +1,6 @@
-.names 1
+.names 2
 .proc Main
+.var 1 a
 Main: Enter 3
 Const 1
 Sto 0 0

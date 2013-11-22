@@ -3,8 +3,10 @@
 // number, the sum of all integers up to that number
 
 program Test {
-  
+    int a;  
+
   void Main() {
+    
     int one;
     one := 1;
     int two;

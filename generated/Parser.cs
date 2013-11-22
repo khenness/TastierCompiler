@@ -36,6 +36,7 @@ enum TastierType : int {   // types for variables
   };
 
   enum TastierKind : int {  // kinds of symbol
+    Const,
     Var,
     Proc
   };

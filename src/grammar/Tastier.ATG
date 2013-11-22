@@ -11,6 +11,7 @@ COMPILER Tastier
   };
 
   enum TastierKind : int {  // kinds of symbol
+    Const,
     Var,
     Proc
   };
@@ -660,6 +661,51 @@ Type<out TastierType type>
 
 /*------------------------------------------------------------------------*/
 
+//ConstDecl = "const" Ident<out name> Type<out type> ":=" value {',' Ident<out name> Type<out type> ":=" value } ";"
+//modified
+
+ConstDecl<bool external>        (. string name; TastierType type; Scope currentScope = openScopes.Peek(); .)
+
+= "const"
+  Type<out type>
+  Ident<out name>               (.
+                                    sym = lookup(openScopes, name);
+                                    if (sym == null) {
+                                      sym = _lookup(externalDeclarations, name);
+                                      isExternal = true;
+                                    }
+                                    if (sym == null) {
+                                      SemErr("reference to undefined variable " + name);
+                                    }
+                                .)
+  ( ":="                         (.
+                                    if ((TastierKind)sym.Item2 != TastierKind.Var) {
+                                      SemErr("cannot assign to non-variable");
+                                    }
+                                .)
+    Expr<out type> ';'
+                                (.
+                                    if (type != (TastierType)sym.Item3) {
+                                      SemErr("incompatible types");
+                                    }
+                                    if (sym.Item4 == 0) {
+                                      if (isExternal) {
+                                        program.Add(new Instruction("", "StoG " + sym.Item1));
+                                        // if the symbol is external, we also store it by name. The linker will resolve the name to an address.
+                                      } else {
+                                        program.Add(new Instruction("", "StoG " + (sym.Item5+3)));
+                                      }
+                                    }
+                                    else {
+                                      int lexicalLevelDifference = Math.Abs(openScopes.Count - sym.Item4)-1;
+                                      program.Add(new Instruction("", "Sto " + lexicalLevelDifference + " " + sym.Item5));
+                                    }
+                                .)
+  
+
+
+//---
+
 VarDecl<bool external>          (.
                                     string name; TastierType type; Scope currentScope = openScopes.Peek();
                                 .)
@@ -679,6 +725,9 @@ VarDecl<bool external>          (.
                                     }
                                 .)
   } ';'.
+
+
+
 
 ExternDecl                      (.  string name; bool external = true; Scope currentScope = openScopes.Peek(); int count = currentScope.Count; .)
 = "external"

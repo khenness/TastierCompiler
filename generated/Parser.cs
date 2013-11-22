@@ -553,8 +553,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		openScopes.Pop();
 		// now we can generate the Enter instruction properly
 		program[enterInstLocation] =
-		 new Instruction(label, "Enter " +
-		                 currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
+		 new Instruction(label, "Enter " + currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
 		openProcedureDeclarations.Pop();
 		
 	}
@@ -838,10 +837,26 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		//modified
 		foreach (Symbol s in externalDeclarations ) {
 		   Console.WriteLine("Looking at something in externalDeclarations");
+		     if(s.Item3 == 1){
+		       //found int
+		       Console.WriteLine("There is a const  '" + s.Item1+ "' of type int. Variables address in the stack frame pointer is " + s.Item5+".\n");
+		
+		     }else if(s.Item3 == 2){
+		       //found bool
+		        Console.WriteLine("There is a const  '" + s.Item1+ "' of type bool. Variables address in the stack frame pointer is " + s.Item5+".\n");
+		     }else{
+		       //found undefined
+		       Console.WriteLine("There is a const " + s.Item1+ "that has an undefined type.");
+		
+		     }
+		
 		 if (s.Item2 == (int)TastierKind.Var) {
 		   header.Add(new Instruction("", ".external var " + ((int)s.Item3) + " " + s.Item1));
 		 } else if (s.Item2 == (int)TastierKind.Proc) {
 		   header.Add(new Instruction("", ".external proc " + s.Item1));
+		 } else if(s.Item2 == (int)TastierKind.Const){
+		   //modified
+		   header.Add(new Instruction("", ".external const " + ((int)s.Item3) + " " + s.Item1));
 		 } else {
 		   SemErr("external item " + s.Item1 + " has no defined type");
 		 }

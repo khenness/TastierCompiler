@@ -874,19 +874,17 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 	}
 
 	void ConstDecl(bool external) {
-		string name; TastierType type; Scope currentScope = openScopes.Peek(); 
+		string name; TastierType type; Scope currentScope = openScopes.Peek(); Symbol sym; 
 		
 		Expect(30);
 		Type(out type);
 		Ident(out name);
 		sym = lookup(openScopes, name);
-		if (external) {
-		sym = new Symbol(name, (int)TastierKind.Const, (int)type, 0, 0);
-		externalDeclarations.Push(sym);
-		} else {
+		
 		sym = new Symbol(name, (int)TastierKind.Const,(int)type,openScopes.Count-1, currentScope.Count(s => s.Item2 == (int)TastierKind.Const));
-		currentScope.Push(sym);
-		}
+		currentScope.Push(sym); //  externalDeclarations.Push(sym);
+		
+		//  }
 		
 		Expect(20);
 		if ((TastierKind)sym.Item2 != TastierKind.Const) {
@@ -898,12 +896,12 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		 SemErr("incompatible types");
 		}
 		if (sym.Item4 == 0) {
-		 if (isExternal) {
-		   program.Add(new Instruction("", "StoG " + sym.Item1));
+		//  if (isExternal) {
+		//    program.Add(new Instruction("", "StoG " + sym.Item1));
 		   // if the symbol is external, we also store it by name. The linker will resolve the name to an address.
-		 } else {
+		//  } else {
 		   program.Add(new Instruction("", "StoG " + (sym.Item5+3)));
-		 }
+		//  }
 		}
 		else {
 		 int lexicalLevelDifference = Math.Abs(openScopes.Count - sym.Item4)-1;
@@ -914,13 +912,10 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			Get();
 			Type(out type);
 			Ident(out name);
-			if (external) {
-			 sym = new Symbol(name, (int)TastierKind.Const, (int)type, 0, 0);
-			 externalDeclarations.Push(sym);
-			} else {
-			 sym = new Symbol(name, (int)TastierKind.Const,(int)type,openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const));
-			 currentScope.Push(sym);
-			}
+			sym = new Symbol(name, (int)TastierKind.Const,(int)type,openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const));
+			currentScope.Push(sym); //  externalDeclarations.Push(sym);
+			
+			
 			
 			Expect(20);
 			if ((TastierKind)sym.Item2 != TastierKind.Const) {
@@ -932,12 +927,12 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			 SemErr("incompatible types");
 			}
 			if (sym.Item4 == 0) {
-			 if (isExternal) {
-			   program.Add(new Instruction("", "StoG " + sym.Item1));
+			// if (isExternal) {
+			 //  program.Add(new Instruction("", "StoG " + sym.Item1));
 			   // if the symbol is external, we also store it by name. The linker will resolve the name to an address.
-			 } else {
+			// } else {
 			   program.Add(new Instruction("", "StoG " + (sym.Item5+3)));
-			 }
+			// }
 			}
 			else {
 			 int lexicalLevelDifference = Math.Abs(openScopes.Count - sym.Item4)-1;

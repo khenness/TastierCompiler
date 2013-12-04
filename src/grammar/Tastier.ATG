@@ -571,17 +571,18 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                 .)
 
 | "for" '(' SimpleAssignment   // Expr<out type>
-                                (.  
-                                     string loopStartLabel = generateLabel();
+                                (. 
+                                    string CompareStartLabel = generateLabel(); 
+                                    program.Add(new Instruction("", "Jmp " + CompareStartLabel));
+                                    string loopStartLabel = generateLabel();
                                     openLabels.Push(generateLabel()); //second label is for the loop end
                                     program.Add(new Instruction(loopStartLabel, "Nop"));
                                 .)
    Expr<out type>             (. //some trickery with assembly language loops
-                                 int done =0;
-                                 if(done ==0){
-                                    Console.WriteLine("You should only see this once per for loop.\n");
-                                 }
-                                // done =1;
+                                 
+                                // program.Add(new Instruction(CompareStartLabel, "Nop"));
+
+                                
                               .) 
 
   SimpleAssignment ')'   //i++ 
@@ -589,8 +590,12 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                     if ((TastierType)type != TastierType.Boolean) {
                                       SemErr("boolean type expected");
                                     }
+                                   
                                     program.Add(new Instruction("", "FJmp " + openLabels.Peek())); // jump to the loop end l$
-                                .)
+                                    program.Add(new Instruction(CompareStartLabel, "Nop"));
+
+
+                                  .)
   
 
       Stat                  

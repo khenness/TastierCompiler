@@ -1,0 +1,28 @@
+// This is a test program which can be compiled by the TastierCompiler.
+// It reads a sequence of numbers from the input file and computes, for each
+// number, the sum of all integers up to that number
+
+program Test {
+  int i;
+  bool b;  
+
+  void forTest() {
+    int x;
+    int y;
+    y :=0;
+    x:=0;
+    for(x:=0; x <10 x:=x+1;){
+       for(y:=0; y <10 y:=y+1;){ 
+        write x; 
+        write y;
+        }
+    }
+   
+  }
+
+  void Main() {
+    forTest();
+  }
+}
+
+

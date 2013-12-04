@@ -689,23 +689,24 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			Get();
 			Expect(10);
 			SimpleAssignment();
+			string CompareStartLabel = generateLabel(); 
+			program.Add(new Instruction("", "Jmp " + CompareStartLabel));
 			string loopStartLabel = generateLabel();
 			openLabels.Push(generateLabel()); //second label is for the loop end
 			program.Add(new Instruction(loopStartLabel, "Nop"));
 			
 			Expr(out type);
-			int done =0;
-			if(done ==0){
-			  Console.WriteLine("You should only see this once per for loop.\n");
-			}
-			// done =1;
 			
 			SimpleAssignment();
 			Expect(11);
 			if ((TastierType)type != TastierType.Boolean) {
 			 SemErr("boolean type expected");
 			}
+			
 			program.Add(new Instruction("", "FJmp " + openLabels.Peek())); // jump to the loop end l$
+			program.Add(new Instruction(CompareStartLabel, "Nop"));
+			
+			
 			
 			Stat();
 			program.Add(new Instruction("", "Jmp " + loopStartLabel));

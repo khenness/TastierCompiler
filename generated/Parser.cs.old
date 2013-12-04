@@ -689,6 +689,8 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			Get();
 			Expect(10);
 			SimpleAssignment();
+			string CompareStartLabel = generateLabel(); 
+			program.Add(new Instruction("", "Jmp " + CompareStartLabel));
 			string loopStartLabel = generateLabel();
 			openLabels.Push(generateLabel()); //second label is for the loop end
 			program.Add(new Instruction(loopStartLabel, "Nop"));
@@ -705,10 +707,13 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			if ((TastierType)type != TastierType.Boolean) {
 			 SemErr("boolean type expected");
 			}
+			
 			program.Add(new Instruction("", "FJmp " + openLabels.Peek())); // jump to the loop end l$
+			program.Add(new Instruction(CompareStartLabel, "Nop"));
+			
+			
 			
 			Stat();
-			Expr(out type);
 			program.Add(new Instruction("", "Jmp " + loopStartLabel));
 			program.Add(new Instruction(openLabels.Pop(), "Nop")); // put the loop end label here
 			

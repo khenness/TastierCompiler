@@ -434,9 +434,10 @@ SimExpr<out TastierType type>   (.  TastierType type1; Instruction inst; .)
 
 /*------------------------------------------------------------------------*/
 
-SimpleAssignment                (.  TastierType type; string name; Symbol sym; bool external = false; bool isExternal = fals$
+SimpleAssignment                (.  TastierType type; string name; Symbol sym; bool external = false;  bool isExternal = false; .)
 
-= Ident<out name>                    (.
+
+= Ident<out name>               (.
                                     sym = lookup(openScopes, name);
                                     if (sym == null) {
                                       sym = _lookup(externalDeclarations, name);
@@ -454,7 +455,7 @@ SimpleAssignment                (.  TastierType type; string name; Symbol sym; b
     Expr<out type> ';'
                                 (.
                                     if (type != (TastierType)sym.Item3) {
-                                      SemErr("incompatible types");
+                                      SemErr("incompatible types");  //=
                                     }
                                     if (sym.Item4 == 0) {
                                       if (isExternal) {
@@ -477,8 +478,9 @@ SimpleAssignment                (.  TastierType type; string name; Symbol sym; b
                                     int currentStackLevel = openScopes.Count;
                                     int lexicalLevelDifference = Math.Abs(openScopes.Count - sym.Item4);
                                     string procedureLabel = getLabelForProcedureName(lexicalLevelDifference, sym.Item1);
-                                    program.Add(new Instruction("", "Call " + lexicalLevelDifference + " " + procedureLabel)$
-                                .)
+                                    program.Add(new Instruction("", "Call " + lexicalLevelDifference + " " + procedureLabel));
+
+                                 .)
   ).
 
 
@@ -515,7 +517,7 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                       }
                                     }
                                     else {
-                                      int lexicalLevelDifference = Math.Abs(openScopes.Count - sym.Item4)-1;
+                                      int lexicalLevelDifference = Math.Abs(openScopes.Count - sym.Item4)-1; //=
                                       program.Add(new Instruction("", "Sto " + lexicalLevelDifference + " " + sym.Item5));
                                     }
                                 .)
@@ -568,11 +570,11 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                     program.Add(new Instruction(openLabels.Pop(), "Nop")); // put the loop end label here
                                 .)
 
-| "for"                         (.  string loopStartLabel = generateLabel();
+| "for" '(' SimpleAssignment    (.  string loopStartLabel = generateLabel();
                                     openLabels.Push(generateLabel()); //second label is for the loop end
                                     program.Add(new Instruction(loopStartLabel, "Nop"));
                                 .)
-  '(' Expr<out type> ')'        (.
+   Expr<out type> ')'        (.
                                     if ((TastierType)type != TastierType.Boolean) {
                                       SemErr("boolean type expected");
                                     }
@@ -581,6 +583,8 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
       Stat                      (.  program.Add(new Instruction("", "Jmp " + loopStartLabel));
                                     program.Add(new Instruction(openLabels.Pop(), "Nop")); // put the loop end label here
                                 .)
+
+
 
 | "read"
   Ident<out name> ';'           (.

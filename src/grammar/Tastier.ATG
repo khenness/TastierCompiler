@@ -574,7 +574,8 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                     openLabels.Push(generateLabel()); //second label is for the loop end
                                     program.Add(new Instruction(loopStartLabel, "Nop"));
                                 .)
-   Expr<out type> ')'        (.
+   Expr<out type> SimpleAssignment ')'
+                                 (.
                                     if ((TastierType)type != TastierType.Boolean) {
                                       SemErr("boolean type expected");
                                     }

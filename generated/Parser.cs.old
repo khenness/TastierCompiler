@@ -694,6 +694,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			program.Add(new Instruction(loopStartLabel, "Nop"));
 			
 			Expr(out type);
+			SimpleAssignment();
 			Expect(11);
 			if ((TastierType)type != TastierType.Boolean) {
 			 SemErr("boolean type expected");

@@ -8,17 +8,19 @@ Const 0
 Sto 0 0
 Const 0
 Sto 0 1
+Const 0
+Sto 0 1
 L$0: Nop
 Load 0 1
 Const 100
 Lss
-FJmp L$1
-Load 0 1
-Write
 Load 0 1
 Const 1
 Add
 Sto 0 1
+FJmp L$1
+Load 0 1
+Write
 Jmp L$0
 L$1: Nop
 L$2: Nop

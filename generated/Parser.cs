@@ -694,6 +694,12 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			program.Add(new Instruction(loopStartLabel, "Nop"));
 			
 			Expr(out type);
+			int done =0;
+			if(done ==0){
+			  Console.WriteLine("You should only see this once per for loop.\n");
+			}
+			// done =1;
+			
 			SimpleAssignment();
 			Expect(11);
 			if ((TastierType)type != TastierType.Boolean) {

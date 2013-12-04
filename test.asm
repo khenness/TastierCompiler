@@ -1,70 +1,29 @@
 .names 4
 .proc Main
-.proc SumUp
+.proc forTest
 .var 2 b
 .var 1 i
-SumUp: Enter 3
+forTest: Enter 1
 Const 0
 Sto 0 0
 Const 0
-Sto 0 1
-Const 0
-Sto 0 1
+Sto 0 0
 L$0: Nop
-Load 0 1
-Const 100
+Load 0 0
+Const 10
 Lss
-Load 0 1
+Load 0 0
 Const 1
 Add
-Sto 0 1
+Sto 0 0
 FJmp L$1
-Load 0 1
+Load 0 0
 Write
 Jmp L$0
 L$1: Nop
-L$2: Nop
-LoadG 3
-Const 0
-Gtr
-FJmp L$3
-Load 0 0
-LoadG 3
-Add
-Sto 0 0
-LoadG 3
-Const 1
-Sub
-StoG 3
-Jmp L$2
-L$3: Nop
-Load 0 0
-Write
-Const 9999
-Sto 0 2
-L$4: Nop
-Load 0 2
-Const 1
-Equ
-FJmp L$5
-Load 0 2
-Write
-Jmp L$4
-L$5: Nop
 Leave
 Ret
 Main: Enter 0
-Read
-StoG 3
-L$6: Nop
-LoadG 3
-Const 0
-Gtr
-FJmp L$7
-Call 1 SumUp
-Read
-StoG 3
-Jmp L$6
-L$7: Nop
+Call 1 forTest
 Leave
 Ret

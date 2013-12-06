@@ -1,33 +1,35 @@
-// This is a test program which can be compiled by the TastierCompiler.
-// It reads a sequence of numbers from the input file and computes, for each
-// number, the sum of all integers up to that number
+//Kevin Hennessy 11726665
+//Exercise 5 - for loops and conditional assignment.
+
+//To test the for loop, the program should print out 1-10.
+
+//to test the left and right side of the conditional operator, the program should print out 111 and 999 respectively.
 
 program Test {
   
-  bool b;  
-
-  void forTest() {
-    int x;
-    int y;
-    y:=0;
-    x:=0;
-    for(x:=0; x <10 x:=x+1;){
-       // write x;            
-    }
-    int a;
-    a:=0;
-    int b;
-    b:=1;
-    int i;
-    i:=2;
-    i:=3>1?100:200;
-    write i; //should output ["1"].
   
+
+  void ex5Test() {
+    int x;
+    for(x:=0; x <10 x:=x+1;){
+        write x;           //should execute 10 times and output "1,2,3,...10" 
+    }
+
+    int LHS;
+    LHS := 111;
+    int RHS;
+    RHS := 999;
+    int i;
+    i:=2>1?LHS:RHS;
+    write i; //should output LHS, ie: "111".
+    
+    i:=2<1?LHS:RHS;
+    write i; //should output RHS, ie: "999".
    
   }
 
   void Main() {
-    forTest();
+    ex5Test();
   }
 }
 

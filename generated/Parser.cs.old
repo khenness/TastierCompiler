@@ -641,26 +641,25 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 					  }
 					  if (sym.Item4 == 0) {
 					    if (isExternal) {
-					//        program.Add(new Instruction("", "StoG " + sym.Item1));
+					      program.Add(new Instruction("", "StoG " + sym.Item1));
 					      // if the symbol is external, we also store it by name. The linker will resolve the $
 					    } else {
-					//         program.Add(new Instruction("", "StoG " + (sym.Item5+3)));
+					      program.Add(new Instruction("", "StoG " + (sym.Item5+3)));
 					    }
 					  }
 					  else {
 					    int lexicalLevelDifference = Math.Abs(openScopes.Count - sym.Item4)-1; //=
-					//       program.Add(new Instruction("", "Sto " + lexicalLevelDifference + " " + sym.Item5));
+					    program.Add(new Instruction("", "Sto " + lexicalLevelDifference + " " + sym.Item5));
 					  }
 					
 					
 					//Jmp endlabel 
 					program.Add(new Instruction("", "Jmp " + endlabel));
+					program.Add(new Instruction(elselabel, "Nop"));
+					
 					
 					Expr(out typeB);
 					Expect(21);
-					program.Add(new Instruction(elselabel, "Nop"));
-					
-					//assign ident to typeB
 					if (typeB != (TastierType)sym.Item3) {
 					    SemErr("incompatible types");  //=
 					  }

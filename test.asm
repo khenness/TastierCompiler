@@ -1,7 +1,7 @@
 .names 2
 .proc Main
-.proc ex5Test
-ex5Test: Enter 4
+.proc ex6Test
+ex6Test: Enter 4
 Const 0
 Sto 0 0
 Jmp L$0
@@ -52,6 +52,6 @@ Write
 Leave
 Ret
 Main: Enter 0
-Call 1 ex5Test
+Call 1 ex6Test
 Leave
 Ret

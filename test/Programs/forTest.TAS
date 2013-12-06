@@ -12,13 +12,17 @@ program Test {
     y:=0;
     x:=0;
     for(x:=0; x <10 x:=x+1;){
-        write x;            
+       // write x;            
     }
-    for(y:=0; y !=10 y:=y+1;){
-       // write y;
-    }
+    int a;
+    a:=0;
+    int b;
+    b:=1;
+    int i;
 
-
+    i:=a>b?a:b;
+    write i; //should output ["1"].
+  
    
   }
 

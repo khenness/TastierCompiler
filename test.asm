@@ -10,7 +10,6 @@ Const 0
 Sto 0 0
 Const 0
 Sto 0 0
-Jmp L$0
 L$1: Nop
 Load 0 0
 Const 10
@@ -27,7 +26,6 @@ Jmp L$1
 L$2: Nop
 Const 0
 Sto 0 1
-Jmp L$3
 L$4: Nop
 Load 0 1
 Const 10

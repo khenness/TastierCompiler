@@ -3,7 +3,7 @@
 // number, the sum of all integers up to that number
 
 program Test {
-  int i;
+  
   bool b;  
 
   void forTest() {
@@ -19,8 +19,8 @@ program Test {
     int b;
     b:=1;
     int i;
-
-    i:=a>b?a:b;
+    i:=2;
+    i:=3>1?100:200;
     write i; //should output ["1"].
   
    

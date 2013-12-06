@@ -493,7 +493,7 @@ SimpleAssignment                (.  TastierType type; string name; Symbol sym; b
 
 
 
-Stat                            (.  TastierType type; string name; Symbol sym; bool external = false; bool isExternal = false; .)
+Stat                            (.  TastierType type; TastierType typeA; TastierType typeB;  string name; Symbol sym; bool external = false; bool isExternal = false; .)
 
 = Ident<out name>               (.
                                     sym = lookup(openScopes, name);
@@ -505,12 +505,13 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                       SemErr("reference to undefined variable " + name);
                                     }
                                 .)
-  ( ":="                         (.
+   (":="                         (.
                                     if ((TastierKind)sym.Item2 != TastierKind.Var) {
                                       SemErr("cannot assign to non-variable");
                                     }
                                 .)
-   Expr<out type>  ';'
+   
+   Expr<out type> ( ';'
                                 (.
                                     if (type != (TastierType)sym.Item3) {
                                       SemErr("incompatible types");  //=
@@ -529,17 +530,22 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                     }
                                 .)
      //modified
-  
-  |  Expr<out type>  '?'
+   
+  | '?'              
+ 
+
+
+    
                                  (.
                                    if ((TastierType)type != TastierType.Boolean) {
                                       SemErr("boolean type expected for conditional assignment");
-                                    }
+                                   }
                          
                                   // if false, jump to elselabel. otherwise continue as normal
                                     string elselabel = generateLabel();
                                     program.Add(new Instruction("", "FJmp " + elselabel));
-                                    
+                                    string endlabel = generateLabel();
+
                                     
                                   .)
 
@@ -565,12 +571,11 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
  
                                  //Jmp endlabel 
                                  program.Add(new Instruction("", "Jmp " + endlabel));
+                                 program.Add(new Instruction(elselabel, "Nop"));
+
                                 .)
  Expr<out typeB> ';' 
                                 (.
-                                 //write "elselabel"
-                                 program.Add(new Instruction(elselabel, "Nop"));
-
                                  //assign ident to typeB
                                  if (typeB != (TastierType)sym.Item3) {
                                       SemErr("incompatible types");  //=
@@ -591,11 +596,10 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
 
                                
                                   //endlabel
-                                  string endlabel = generateLabel();
                                   program.Add(new Instruction(endlabel, "Nop"));
  
                                 .)
-
+  )
   | '(' ')' ';'                 (.
                                     if ((TastierKind)sym.Item2 != TastierKind.Proc) {
                                       SemErr("object is not a procedure");

@@ -578,28 +578,30 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                     openLabels.Push(generateLabel()); //second label is for the loop end
                                     program.Add(new Instruction(loopStartLabel, "Nop"));
                                 .)
-   Expr<out type>             (. //some trickery with assembly language loops
-                                 
-                                // program.Add(new Instruction(CompareStartLabel, "Nop"));
-
-                                
-                              .) 
+   Expr<out type>              //some trickery with assembly language loops
+                               //I made a label called "CompareStartLabel" that goes just before the condition is evaluated,
+                               // and added an unconditional jump right after the assignment, bypassing the update for
+                               // the first iteration of the loop. (making it not skip 0 when counting up to 10)  
+                               
+                               
 
   SimpleAssignment ')'   //i++ 
                                  (.
                                     if ((TastierType)type != TastierType.Boolean) {
                                       SemErr("boolean type expected");
                                     }
-                                   
+                                   // program.Add(new Instruction(CompareStartLabel, "Nop"));
                                     program.Add(new Instruction("", "FJmp " + openLabels.Peek())); // jump to the loop end l$
-                                    program.Add(new Instruction(CompareStartLabel, "Nop"));
+                                  //  program.Add(new Instruction(CompareStartLabel, "Nop"));
 
 
                                   .)
   
 
       Stat                  
-                               (.  program.Add(new Instruction("", "Jmp " + loopStartLabel));
+                               (.   program.Add(new Instruction(CompareStartLabel, "Nop"));          //
+                                  //  program.Add(new Instruction("", "FJmp " + openLabels.Peek()));   //
+                                    program.Add(new Instruction("", "Jmp " + loopStartLabel));
                                     program.Add(new Instruction(openLabels.Pop(), "Nop")); // put the loop end label here
                                 .)
     

@@ -9,14 +9,16 @@ program Test {
   void forTest() {
     int x;
     int y;
-    y :=0;
+    y:=0;
     x:=0;
     for(x:=0; x <10 x:=x+1;){
-       for(y:=0; y <10 y:=y+1;){ 
-        write x; 
-        write y;
-        }
+        write x;            
     }
+    for(y:=0; y !=10 y:=y+1;){
+       // write y;
+    }
+
+
    
   }
 

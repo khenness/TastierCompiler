@@ -696,19 +696,20 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			program.Add(new Instruction(loopStartLabel, "Nop"));
 			
 			Expr(out type);
-			
 			SimpleAssignment();
 			Expect(11);
 			if ((TastierType)type != TastierType.Boolean) {
 			 SemErr("boolean type expected");
 			}
-			
+			// program.Add(new Instruction(CompareStartLabel, "Nop"));
 			program.Add(new Instruction("", "FJmp " + openLabels.Peek())); // jump to the loop end l$
-			program.Add(new Instruction(CompareStartLabel, "Nop"));
+			//  program.Add(new Instruction(CompareStartLabel, "Nop"));
 			
 			
 			
 			Stat();
+			program.Add(new Instruction(CompareStartLabel, "Nop"));          //
+			//  program.Add(new Instruction("", "FJmp " + openLabels.Peek()));   //
 			program.Add(new Instruction("", "Jmp " + loopStartLabel));
 			program.Add(new Instruction(openLabels.Pop(), "Nop")); // put the loop end label here
 			

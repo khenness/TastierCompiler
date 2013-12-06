@@ -20,28 +20,26 @@ Const 1
 Add
 Sto 0 0
 FJmp L$2
+Load 0 0
+Write
 L$0: Nop
+Jmp L$1
+L$2: Nop
 Const 0
 Sto 0 1
 Jmp L$3
 L$4: Nop
 Load 0 1
 Const 10
-Lss
+Neq
 Load 0 1
 Const 1
 Add
 Sto 0 1
 FJmp L$5
 L$3: Nop
-Load 0 0
-Write
-Load 0 1
-Write
 Jmp L$4
 L$5: Nop
-Jmp L$1
-L$2: Nop
 Leave
 Ret
 Main: Enter 0

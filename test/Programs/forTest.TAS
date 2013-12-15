@@ -1,0 +1,36 @@
+//Kevin Hennessy 11726665
+//Exercise 5 - for loops and conditional assignment.
+
+//To test the for loop, the program should print out 1-10.
+
+//to test the left and right side of the conditional operator, the program should print out 111 and 999 respectively.
+
+program Test {
+  
+  
+
+  void ex6Test() {
+    int x;
+    for(x:=0; x <10 x:=x+1;){
+        write x;           //should execute 10 times and output "1,2,3,...10" 
+    }
+
+    int LHS;
+    LHS := 111;
+    int RHS;
+    RHS := 999;
+    int i;
+    i:=2>1?LHS:RHS;
+    write i; //should output LHS, ie: "111".
+    
+    i:=2<1?LHS:RHS;
+    write i; //should output RHS, ie: "999".
+   
+  }
+
+  void Main() {
+    ex6Test();
+  }
+}
+
+

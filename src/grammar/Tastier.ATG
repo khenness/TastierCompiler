@@ -434,7 +434,15 @@ SimExpr<out TastierType type>   (.  TastierType type1; Instruction inst; .)
 
 /*------------------------------------------------------------------------*/
 
-Stat                            (.  TastierType type; string name; Symbol sym; bool external = false; bool isExternal = false; .)
+
+//
+
+
+
+// Used only in my "for" loop. Its just a "Stat" with the non-assignment stuff taken out. 
+
+SimpleAssignment                (.  TastierType type; string name; Symbol sym; bool external = false;  bool isExternal = false; .)
+
 
 = Ident<out name>               (.
                                     sym = lookup(openScopes, name);
@@ -454,7 +462,59 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
     Expr<out type> ';'
                                 (.
                                     if (type != (TastierType)sym.Item3) {
-                                      SemErr("incompatible types");
+                                      SemErr("incompatible types");  //=
+                                    }
+                                    if (sym.Item4 == 0) {
+                                      if (isExternal) {
+                                        program.Add(new Instruction("", "StoG " + sym.Item1));
+                                        // if the symbol is external, we also store it by name. The linker will resolve the $
+                                      } else {
+                                        program.Add(new Instruction("", "StoG " + (sym.Item5+3)));
+                                      }
+                                    }
+                                    else {
+                                      int lexicalLevelDifference = Math.Abs(openScopes.Count - sym.Item4)-1;
+                                      program.Add(new Instruction("", "Sto " + lexicalLevelDifference + " " + sym.Item5));
+                                    }
+                                .)
+  | '(' ')' ';'                 (.
+                                    if ((TastierKind)sym.Item2 != TastierKind.Proc) {
+                                      SemErr("object is not a procedure");
+                                    }
+
+                                    int currentStackLevel = openScopes.Count;
+                                    int lexicalLevelDifference = Math.Abs(openScopes.Count - sym.Item4);
+                                    string procedureLabel = getLabelForProcedureName(lexicalLevelDifference, sym.Item1);
+                                    program.Add(new Instruction("", "Call " + lexicalLevelDifference + " " + procedureLabel));
+
+                                 .)
+  ).
+
+
+
+
+Stat                            (.  TastierType type; TastierType typeA; TastierType typeB;  string name; Symbol sym; bool external = false; bool isExternal = false; .)
+
+= Ident<out name>               (.
+                                    sym = lookup(openScopes, name);
+                                    if (sym == null) {
+                                      sym = _lookup(externalDeclarations, name);
+                                      isExternal = true;
+                                    }
+                                    if (sym == null) {
+                                      SemErr("reference to undefined variable " + name);
+                                    }
+                                .)
+   (":="                         (.
+                                    if ((TastierKind)sym.Item2 != TastierKind.Var) {
+                                      SemErr("cannot assign to non-variable");
+                                    }
+                                .)
+   
+   Expr<out type> ( ';'
+                                (.
+                                    if (type != (TastierType)sym.Item3) {
+                                      SemErr("incompatible types");  //=
                                     }
                                     if (sym.Item4 == 0) {
                                       if (isExternal) {
@@ -465,10 +525,81 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                       }
                                     }
                                     else {
-                                      int lexicalLevelDifference = Math.Abs(openScopes.Count - sym.Item4)-1;
+                                      int lexicalLevelDifference = Math.Abs(openScopes.Count - sym.Item4)-1; //=
                                       program.Add(new Instruction("", "Sto " + lexicalLevelDifference + " " + sym.Item5));
                                     }
                                 .)
+     //modified
+   
+  | '?'              
+ 
+
+
+    
+                                 (.
+                                   if ((TastierType)type != TastierType.Boolean) {
+                                      SemErr("boolean type expected for conditional assignment");
+                                   }
+                         
+                                  // if false, jump to elselabel. otherwise continue as normal
+                                    string elselabel = generateLabel();
+                                    program.Add(new Instruction("", "FJmp " + elselabel));
+                                    string endlabel = generateLabel();
+
+                                    
+                                  .)
+
+ Expr<out typeA>  ':'          (.
+                                 
+                                 //assign ident to typeA
+                                 if (typeA != (TastierType)sym.Item3) {
+                                      SemErr("incompatible types");  //=
+                                    }
+                                    if (sym.Item4 == 0) {
+                                      if (isExternal) {
+                                        program.Add(new Instruction("", "StoG " + sym.Item1));
+                                        // if the symbol is external, we also store it by name. The linker will resolve the $
+                                      } else {
+                                        program.Add(new Instruction("", "StoG " + (sym.Item5+3)));
+                                      }
+                                    }
+                                    else {
+                                      int lexicalLevelDifference = Math.Abs(openScopes.Count - sym.Item4)-1; //=
+                                      program.Add(new Instruction("", "Sto " + lexicalLevelDifference + " " + sym.Item5));
+                                    }
+
+ 
+                                 //Jmp endlabel 
+                                 program.Add(new Instruction("", "Jmp " + endlabel));
+                                 program.Add(new Instruction(elselabel, "Nop"));
+
+                                .)
+ Expr<out typeB> ';' 
+                                (.
+                                 //assign ident to typeB
+                                 if (typeB != (TastierType)sym.Item3) {
+                                      SemErr("incompatible types");  //=
+                                    }
+                                    if (sym.Item4 == 0) {
+                                      if (isExternal) {
+                                        program.Add(new Instruction("", "StoG " + sym.Item1));
+                                        // if the symbol is external, we also store it by name. The linker will resolve the $
+                                      } else {
+                                        program.Add(new Instruction("", "StoG " + (sym.Item5+3)));
+                                      }
+                                    }
+                                    else {
+                                      int lexicalLevelDifference = Math.Abs(openScopes.Count - sym.Item4)-1; //=
+                                      program.Add(new Instruction("", "Sto " + lexicalLevelDifference + " " + sym.Item5));
+                                    }
+
+
+                               
+                                  //endlabel
+                                  program.Add(new Instruction(endlabel, "Nop"));
+ 
+                                .)
+  )
   | '(' ')' ';'                 (.
                                     if ((TastierKind)sym.Item2 != TastierKind.Proc) {
                                       SemErr("object is not a procedure");
@@ -518,6 +649,40 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                     program.Add(new Instruction(openLabels.Pop(), "Nop")); // put the loop end label here
                                 .)
 
+| "for" '(' SimpleAssignment   // Expr<out type>
+                                (. 
+                                    string CompareStartLabel = generateLabel(); 
+                                    program.Add(new Instruction("", "Jmp " + CompareStartLabel)); //There was some attempted trickery here with assembly language loops. This jump does literally nothing now.
+                                    string loopStartLabel = generateLabel();
+                                    openLabels.Push(generateLabel()); //second label is for the loop end
+                                    program.Add(new Instruction(loopStartLabel, "Nop"));
+                                .)
+   Expr<out type>             
+                               
+                               
+
+  SimpleAssignment ')'   //i++ 
+                                 (.
+                                    if ((TastierType)type != TastierType.Boolean) {
+                                      SemErr("boolean type expected");
+                                    }
+                                   // program.Add(new Instruction(CompareStartLabel, "Nop"));
+                                    program.Add(new Instruction("", "FJmp " + openLabels.Peek())); // jump to the loop end l$
+                                  //  program.Add(new Instruction(CompareStartLabel, "Nop"));
+
+
+                                  .)
+  
+
+      Stat                  
+                               (.   program.Add(new Instruction(CompareStartLabel, "Nop"));          
+                                    program.Add(new Instruction("", "Jmp " + loopStartLabel));
+                                    program.Add(new Instruction(openLabels.Pop(), "Nop")); // put the loop end label here
+                                .)
+    
+
+
+
 | "read"
   Ident<out name> ';'           (.
                                     sym = lookup(openScopes, name);
@@ -554,17 +719,13 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
 
 | "write"
   Expr<out type>               (.
+
                                     if (type != TastierType.Integer) {
                                       SemErr("integer type expected");
                                     }
                                     program.Add(new Instruction("", "Write"));
                                 .)
-{  ',' Expr<out type>             (.
-                                    if (type != TastierType.Integer) {
-                                      SemErr("integer type expected");
-                                    }
-                                    program.Add(new Instruction("", "Write"));
-                                .)
+
 }';'
 
 

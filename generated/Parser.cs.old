@@ -528,7 +528,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		*/
 		
 		while (StartOf(2)) {
-			if (la.kind == 31 || la.kind == 32) {
+			if (la.kind == 32 || la.kind == 33) {
 				VarDecl(external);
 			} else if (StartOf(3)) {
 				Stat();
@@ -569,7 +569,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		 currentScope.Push(new Symbol(name, (int)TastierKind.Var, (int)type, openScopes.Count-1, currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var)));
 		}
 		
-		while (la.kind == 34) {
+		while (la.kind == 30) {
 			Get();
 			Ident(out name);
 			if (external) {
@@ -822,6 +822,15 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			}
 			program.Add(new Instruction("", "Write"));
 			
+			while (la.kind == 30) {
+				Get();
+				Expr(out type);
+				if (type != TastierType.Integer) {
+				 SemErr("integer type expected");
+				}
+				program.Add(new Instruction("", "Write"));
+				
+			}
 			Expect(21);
 			break;
 		}
@@ -911,13 +920,13 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 
 	void Tastier() {
 		string name; bool external = false; 
-		Expect(30);
+		Expect(31);
 		Ident(out name);
 		openScopes.Push(new Scope());
 		
 		Expect(12);
 		while (StartOf(5)) {
-			if (la.kind == 31 || la.kind == 32) {
+			if (la.kind == 32 || la.kind == 33) {
 				VarDecl(external);
 			} else if (la.kind == 9) {
 				ProcDecl();
@@ -1029,7 +1038,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 	void ExternDecl() {
 		string name; bool external = true; Scope currentScope = openScopes.Peek(); int count = currentScope.Count; 
 		Expect(35);
-		if (la.kind == 31 || la.kind == 32) {
+		if (la.kind == 32 || la.kind == 33) {
 			VarDecl(external);
 		} else if (la.kind == 36) {
 			Get();
@@ -1042,7 +1051,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 	void ConstDecl(bool external) {
 		string name; TastierType type; Scope currentScope = openScopes.Peek(); Symbol sym; 
 		
-		Expect(33);
+		Expect(34);
 		Type(out type);
 		Ident(out name);
 		sym = lookup(openScopes, name);
@@ -1074,7 +1083,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		 program.Add(new Instruction("", "Sto " + lexicalLevelDifference + " " + sym.Item5));
 		}
 		
-		while (la.kind == 34) {
+		while (la.kind == 30) {
 			Get();
 			Type(out type);
 			Ident(out name);
@@ -1111,10 +1120,10 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 
 	void Type(out TastierType type) {
 		type = TastierType.Undefined; 
-		if (la.kind == 31) {
+		if (la.kind == 32) {
 			Get();
 			type = TastierType.Integer; 
-		} else if (la.kind == 32) {
+		} else if (la.kind == 33) {
 			Get();
 			type = TastierType.Boolean; 
 		} else SynErr(47);
@@ -1134,10 +1143,10 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 	static readonly bool[,] set = {
 		{T,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x},
 		{x,x,x,x, x,x,x,x, x,x,x,x, x,x,T,T, T,T,T,T, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x},
-		{x,T,x,x, x,x,x,x, x,T,x,x, T,x,x,x, x,x,x,x, x,x,x,x, T,x,T,T, T,T,x,T, T,x,x,x, x,x,x},
+		{x,T,x,x, x,x,x,x, x,T,x,x, T,x,x,x, x,x,x,x, x,x,x,x, T,x,T,T, T,T,x,x, T,T,x,x, x,x,x},
 		{x,T,x,x, x,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, x,x,x,x, T,x,T,T, T,T,x,x, x,x,x,x, x,x,x},
-		{x,T,x,x, x,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, x,x,x,x, T,x,T,T, T,T,x,T, T,x,x,x, x,x,x},
-		{x,x,x,x, x,x,x,x, x,T,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,T, T,T,x,T, x,x,x}
+		{x,T,x,x, x,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, x,x,x,x, T,x,T,T, T,T,x,x, T,T,x,x, x,x,x},
+		{x,x,x,x, x,x,x,x, x,T,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, T,T,T,T, x,x,x}
 
 	};
 } // end Parser
@@ -1181,11 +1190,11 @@ public class Errors {
 			case 27: s = "\"for\" expected"; break;
 			case 28: s = "\"read\" expected"; break;
 			case 29: s = "\"write\" expected"; break;
-			case 30: s = "\"program\" expected"; break;
-			case 31: s = "\"int\" expected"; break;
-			case 32: s = "\"bool\" expected"; break;
-			case 33: s = "\"const\" expected"; break;
-			case 34: s = "\",\" expected"; break;
+			case 30: s = "\",\" expected"; break;
+			case 31: s = "\"program\" expected"; break;
+			case 32: s = "\"int\" expected"; break;
+			case 33: s = "\"bool\" expected"; break;
+			case 34: s = "\"const\" expected"; break;
 			case 35: s = "\"external\" expected"; break;
 			case 36: s = "\"procedure\" expected"; break;
 			case 37: s = "??? expected"; break;

@@ -3,13 +3,15 @@
 // number, the sum of all integers up to that number
 
 program Test {
+  const int x:= 99, int z := 88;
+  
   int i;
   bool b;  
 
   void SumUp() {
     int sum;
-    sum = 0;
-    while (i > 0) { sum = sum + i; i = i - 1; }
+    sum := 0;
+    while (i > 0) { sum := sum + i; i := i - 1; }
     write sum;
   }
 

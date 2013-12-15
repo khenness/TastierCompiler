@@ -14,9 +14,6 @@ program Test {
     for(x:=0; x <10 x:=x+1;){
         write x;           //should execute 10 times and output "1,2,3,...10" 
     }
-    for(x:=10; x > 0 x:=x-1;){
-        write x;           //should execute 10 times and output "10,9,8...1"
-    }
 
     int LHS;
     LHS := 111;

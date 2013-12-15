@@ -726,10 +726,16 @@ Stat                            (.  TastierType type; TastierType typeA; Tastier
                                     program.Add(new Instruction("", "Write"));
                                 .)
 
+{
+  ',' Expr<out type>             (.
+                                     if (type != TastierType.Integer) {
+                                       SemErr("integer type expected");
+                                     }
+                                     program.Add(new Instruction("", "Write"));
+                                 .)
 }';'
 
-
-| '{' { Stat | VarDecl<external> } '}' .
+ | '{' { Stat | VarDecl<external> } '}' .
 
 /*------------------------------------------------------------------------*/
 

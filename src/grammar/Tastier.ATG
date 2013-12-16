@@ -1,19 +1,24 @@
 COMPILER Tastier
 
+//links for report:
+//Structs (not storing their members in the symbol table)-> http://lists.cs.uiuc.edu/pipermail/llvmdev/2010-November/035930.html
+
 /*
    First, let's declare all the types we're going to use.
 */
 
   enum TastierType : int {   // types for variables
     Undefined,
+    Struct,
     Integer,
     Boolean
   };
 
   enum TastierKind : int {  // kinds of symbol
-    Const,
+    Const, 
     Var,
     Proc
+    
   };
 
 /*
@@ -73,8 +78,9 @@ COMPILER Tastier
     * Symbol.Item2 -> kind
     * Symbol.Item3 -> type
     * Symbol.Item4 -> stack frame pointer
-    * Symbol.Item5 -> variable's address in the stack frame pointed to by
-                      Item4, -1 if procedure
+    * Symbol.Item5 -> variable's address in the stack frame pointed to by Item4, -1 if procedure
+    * Symbol.Item6 -> memory pointer (for Structs. -1 when not in use.) See: http://lists.cs.uiuc.edu/pipermail/llvmdev/2010-November/035930.html for reasoning
+    * Symbol.Item7 -> structname -> string name of stuct that the entry is an instantiation of. "not a struct" if not used.
 */
 
   class Scope : Stack<Symbol> {}
@@ -360,7 +366,7 @@ MulOp<out Instruction inst>
 ProcDecl                        (.  string name; string label; Scope currentScope = openScopes.Peek(); int enterInstLocation = 0; bool external = false; .)
 = "void"
   Ident<out name>               (.
-                                    currentScope.Push(new Symbol(name, (int)TastierKind.Proc, (int)TastierType.Undefined, openScopes.Count, -1));
+                                    currentScope.Push(new Symbol(name, (int)TastierKind.Proc, (int)TastierType.Undefined, openScopes.Count, -1,-1,"not a struct"));
                                     openScopes.Push(new Scope());
                                     currentScope = openScopes.Peek();
                                 .)
@@ -864,6 +870,7 @@ Type<out TastierType type>
 =                               (.  type = TastierType.Undefined; .)
  ( "int"                        (.  type = TastierType.Integer; .)
  | "bool"                       (.  type = TastierType.Boolean; .)
+ | "struct"                     (.  type = TastierType.Struct; .)
  ).
 
 /*------------------------------------------------------------------------*/
@@ -880,7 +887,7 @@ ConstDecl<bool external>        (.
   Ident<out name>              (. 
                                      sym = lookup(openScopes, name);
                                    
-                                      sym = new Symbol(name,(int)TastierKind.Const,(int)type, 0,currentScope.Count(s => s.Item2 == (int)TastierKind.Var || s.Item2 == (int)TastierKind.Const));
+                                      sym = new Symbol(name,(int)TastierKind.Const,(int)type, 0,currentScope.Count(s => s.Item2 == (int)TastierKind.Var || s.Item2 == (int)TastierKind.Const),-1,"not a struct");
                                       currentScope.Push(sym);
 
                                   //  }
@@ -911,7 +918,7 @@ ConstDecl<bool external>        (.
    {',' Type<out type>
         Ident<out name>         (.
                                    
-                                   sym = new Symbol(name, (int)TastierKind.Const,(int)type,0,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
+                                   sym = new Symbol(name, (int)TastierKind.Const,(int)type,0,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var),-1,"not a struct");
                                    currentScope.Push(sym);
 
                                     
@@ -943,35 +950,39 @@ ConstDecl<bool external>        (.
 
 //---
 
+
+
+
+
+
+
 VarDecl<bool external>          (.
                                     string name; TastierType type; Scope currentScope = openScopes.Peek();
                                 .)
 = Type<out type>
   Ident<out name>               (.
                                     if (external) {
-                                      Symbol mySym = new Symbol(name, (int)TastierKind.Var, (int)type, 0, 0);
+                                      Symbol mySym = new Symbol(name, (int)TastierKind.Var, (int)type, 0, 0,-1,"not a struct");
                                       externalDeclarations.Push(mySym);
-                                      Console.WriteLine("Variable declared. (name = "+ mySym.Item1+",type = "+mySym.Item2+ ", kind = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+")");
+                                      Console.WriteLine("Variable declared. (name = "+ mySym.Item1+",type = "+mySym.Item2+ ", kind = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+ ", memorypointer = "+mySym.Item6+", structname = '"+mySym.Item7+ "')");
                                     } else {
-                                     Symbol mySym = new Symbol(name, (int)TastierKind.Var,(int)type, openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
+                                     Symbol mySym = new Symbol(name, (int)TastierKind.Var,(int)type, openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var),-1,"not a struct");
                                      currentScope.Push(mySym );
-                                      Console.WriteLine("Variable declared. (name = "+ mySym.Item1+", type = "+mySym.Item2+", kind = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+")");
-
+                                      Console.WriteLine("Variable declared. (name = "+ mySym.Item1+", type = "+mySym.Item2+", kind = "+mySym.Item3+", stackframe = "+mySym.Item4+",stackframeoffset = "+mySym.Item5+ ", memorypointer = " +mySym.Item6+", structname = '"+mySym.Item7+ "')");
                                     }
                                 .)
   { ',' Ident<out name>         (.
                                     if (external) {
-                                      Symbol mySym = new Symbol(name, (int)TastierKind.Var, (int)type, 0, 0);
+                                      Symbol mySym = new Symbol(name, (int)TastierKind.Var, (int)type, 0, 0,-1,"not a struct");
                                       externalDeclarations.Push(mySym);
-                                      Console.WriteLine("Variable declared. (name = "+ mySym.Item1+", type = "+mySym.Item2+ ", kind = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+")");
+                                      Console.WriteLine("Variable declared. (name = "+ mySym.Item1+", type = "+mySym.Item2+ ", kind = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+ ", memorypointer = "+mySym.Item6+ ", structname = '"+mySym.Item7+"')");
                                     } else {
-                                     Symbol mySym = new Symbol(name, (int)TastierKind.Var,(int)type,openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
+                                     Symbol mySym = new Symbol(name, (int)TastierKind.Var,(int)type,openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var),-1,"not a struct");
                                      currentScope.Push(mySym );
-                                      Console.WriteLine("Variable declared. (name = "+ mySym.Item1+", type = "+mySym.Item2+ ", kind = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+")");
+                                      Console.WriteLine("Variable declared. (name = "+ mySym.Item1+", type = "+mySym.Item2+ ", kind = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+ ", memorypointer = "+mySym.Item6+ ", structname = '"+mySym.Item7+"')");
                                     }
                                 .)
   } ';' (.  .)
-
 .
 
 
@@ -981,7 +992,7 @@ ExternDecl                      (.  string name; bool external = true; Scope cur
 = "external"
   ( VarDecl<external>
   | "procedure" Ident<out name> ';'
-                                (.  externalDeclarations.Push(new Symbol(name, (int)TastierKind.Proc, (int)TastierType.Undefined, 1, -1)); .)
+                                (.  externalDeclarations.Push(new Symbol(name, (int)TastierKind.Proc, (int)TastierType.Undefined, 1, -1,-1,"not a struct")); .)
   ) .
 
 END Tastier.

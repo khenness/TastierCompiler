@@ -30,7 +30,8 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 
-using Symbol = System.Tuple<string, int, int, int, int>;
+using Symbol = System.Tuple<string, int, int, int, int, int, string>;
+using DeclaredStruct = System.Tuple<string, int,int>;
 using Instruction = System.Tuple<string,string>;
 using StackAddress = System.Tuple<int, int>;
 

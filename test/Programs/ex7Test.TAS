@@ -15,16 +15,11 @@ int atestintthatisglobal;
 //atestintegerthatisglobal := 42;
 
 
-  void ex6Test() {
-     bool sillybool1; 
-   void sillyinternalmethod(){
-     bool sillybool2;
-       
-        int d;
-       d := 8888;
-       write d;
-    }
-    sillyinternalmethod();
+  void ex7Test() {
+    int x;
+    int x;
+    write x;
+    struct date;
     int x;
     for(x:=0; x <10 x:=x+1;){
         write x;           //should execute 10 times and output "1,2,3,...10" 
@@ -46,8 +41,10 @@ int atestintthatisglobal;
   void Main() {
 
 
-
-    ex6Test();
+    int x;
+   // x:=41;
+    write x;
+    ex7Test();
   }
 }
 

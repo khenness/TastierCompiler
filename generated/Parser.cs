@@ -564,22 +564,32 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		Type(out type);
 		Ident(out name);
 		if (external) {
-		 externalDeclarations.Push(new Symbol(name, (int)TastierKind.Var, (int)type, 0, 0));
+		 Symbol mySym = new Symbol(name, (int)TastierKind.Var, (int)type, 0, 0);
+		 externalDeclarations.Push(mySym);
+		 Console.WriteLine("Variable declared. (name = "+ mySym.Item1+",type = "+mySym.Item2+ ", kind = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+")");
 		} else {
-		 currentScope.Push(new Symbol(name, (int)TastierKind.Var, (int)type, openScopes.Count-1, currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var)));
+		Symbol mySym = new Symbol(name, (int)TastierKind.Var,(int)type, openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
+		currentScope.Push(mySym );
+		 Console.WriteLine("Variable declared. (name = "+ mySym.Item1+", type = "+mySym.Item2+", kind = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+")");
+		
 		}
 		
 		while (la.kind == 30) {
 			Get();
 			Ident(out name);
 			if (external) {
-			 externalDeclarations.Push(new Symbol(name, (int)TastierKind.Var, (int)type, 0, 0));
+			 Symbol mySym = new Symbol(name, (int)TastierKind.Var, (int)type, 0, 0);
+			 externalDeclarations.Push(mySym);
+			 Console.WriteLine("Variable declared. (name = "+ mySym.Item1+", type = "+mySym.Item2+ ", kind = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+")");
 			} else {
-			 currentScope.Push(new Symbol(name, (int)TastierKind.Var, (int)type, openScopes.Count-1, currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var)));
+			Symbol mySym = new Symbol(name, (int)TastierKind.Var,(int)type,openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
+			currentScope.Push(mySym );
+			 Console.WriteLine("Variable declared. (name = "+ mySym.Item1+", type = "+mySym.Item2+ ", kind = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+")");
 			}
 			
 		}
 		Expect(21);
+		
 	}
 
 	void Stat() {
@@ -949,11 +959,11 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		 if (s.Item2 == (int)TastierKind.Var) {
 		    if(s.Item3 == 1){
 		       //found int
-		      Console.WriteLine("There is a global variable '" + s.Item1+ "' of type int.");
+		      Console.WriteLine("There is a global variable '" + s.Item1+ "' of type int. (s.Item2= "+ s.Item2+", s.Item3= "+ s.Item3+")");
 		      Console.WriteLine("Stack frame pointer of '"+ s.Item1+"' is " +s.Item4+", variables address in the stack frame pointer is " + s.Item5+".\n");   
 		    }else if(s.Item3 == 2){
 		        //found bool
-		        Console.WriteLine("There is a global variable '"+ s.Item1+ "' of type bool.");
+		        Console.WriteLine("There is a global variable '"+ s.Item1+ "' of type bool. (s.Item2= "+ s.Item2+", s.Item3= "+ s.Item3+")");
 		        Console.WriteLine("Stack frame pointer of '"+ s.Item1+"' is " + s.Item4+", variables address in the stack frame pointer is " + s.Item5+".\n");
 		      }else{
 		     //found undefined

@@ -369,8 +369,8 @@ public class Scanner {
 			case "program": t.kind = 31; break;
 			case "int": t.kind = 32; break;
 			case "bool": t.kind = 33; break;
-			case "struct": t.kind = 34; break;
-			case "const": t.kind = 35; break;
+			case "const": t.kind = 34; break;
+			case "struct": t.kind = 35; break;
 			case "external": t.kind = 37; break;
 			case "procedure": t.kind = 38; break;
 			default: break;

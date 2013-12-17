@@ -18,11 +18,12 @@ struct person{
   int legs;
 };
 
+
   void ex7Test() {
     int x;
     int x;
     write x;
-    struct date;
+   
     int x;
     for(x:=0; x <10 x:=x+1;){
         write x;           //should execute 10 times and output "1,2,3,...10" 
@@ -42,9 +43,12 @@ struct person{
   }
 
   void Main() {
-
-
+    struct person Eimear;
+    struct date mydate;
+    struct hampster myhampster;
+    struct person Kevin;
     int x;
+    bool y;
    // x:=41;
     write x;
     ex7Test();

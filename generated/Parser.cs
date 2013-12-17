@@ -32,7 +32,7 @@ public class Parser {
 
 enum TastierType : int {   // types for variables
     Undefined,
-    Struct,
+    InstStruct,
     Integer,
     Boolean
   };
@@ -145,6 +145,9 @@ enum TastierType : int {   // types for variables
 Stack<DefinedStruct> definedStructs = new Stack<DefinedStruct>();
 Stack<Symbol> structMembers  = new Stack<Symbol>();
 int nextfreememberaddress =0;
+int nextfreememberinstaddress =0;
+
+
 /*
   Stack for defined structs.
   When we see a new definition of a struct, for example:
@@ -166,6 +169,15 @@ int nextfreememberaddress =0;
   to get all the info that we need.  
 */
 
+
+Stack<Symbol> instantiatedStructMembers  = new Stack<Symbol>();
+
+/*
+  The stack for storing the data of instantiated structs. 
+  The actual struct will go on the symbol table and point
+  at this.
+
+*/
 
 
 
@@ -565,8 +577,10 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		*/
 		
 		while (StartOf(2)) {
-			if (la.kind == 32 || la.kind == 33 || la.kind == 34) {
+			if (la.kind == 32 || la.kind == 33) {
 				VarDecl(external);
+			} else if (la.kind == 35) {
+				StructInstDecl(external);
 			} else if (StartOf(3)) {
 				Stat();
 			} else {
@@ -601,11 +615,11 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		Type(out type);
 		Ident(out name);
 		if (external) {
-		 Symbol mySym = new Symbol(name, (int)TastierKind.Var, (int)type, 0, 0,-1,"not a struct");
+		 Symbol mySym = new Symbol(name, (int)TastierKind.Var,(int)type, 0, 0,-1,"not a struct");
 		 externalDeclarations.Push(mySym);
 		 Console.WriteLine("Variable declared. (name = "+ mySym.Item1+",type = "+mySym.Item2+ ", kind = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+ ", memorypointer = "+mySym.Item6+", structname = '"+mySym.Item7+ "')");
 		} else {
-		Symbol mySym = new Symbol(name, (int)TastierKind.Var,(int)type, openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var),-1,"not a struct");
+		Symbol mySym = new Symbol(name, (int)TastierKind.Var,(int)type,openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var),-1,"not a struct");
 		currentScope.Push(mySym );
 		 Console.WriteLine("Variable declared. (name = "+ mySym.Item1+", type = "+mySym.Item2+", kind = "+mySym.Item3+", stackframe = "+mySym.Item4+",stackframeoffset = "+mySym.Item5+ ", memorypointer = " +mySym.Item6+", structname = '"+mySym.Item7+ "')");
 		}
@@ -626,6 +640,69 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		}
 		Expect(21);
 		
+	}
+
+	void StructInstDecl(bool external) {
+		string name; string structname; bool structfound = false; int newSymbolPointer=0; TastierType type = TastierType.InstStruct;; Scope currentScope = openScopes.Peek();
+		
+		Expect(35);
+		Ident(out structname);
+		Symbol[] structMemberArray = structMembers.ToArray();
+		foreach (DefinedStruct ds in definedStructs) {
+		  if(ds.Item1 == structname){
+		     structfound = true;
+		     newSymbolPointer =  nextfreememberinstaddress;
+		
+		    //STEP 1 - copy the members from the member stack to the
+		    //          instantiated members stack
+		      for (int i =ds.Item3; i< (ds.Item3+ds.Item2); i++){
+		         //this horrendous referencing is necessary because I thought I could do
+		         // structMembers[i] but it turns out I couldn't. (I had to convert it 
+		         // to an array first and in doing that you end flipping the stupid thing
+		         // around in memory. Harrumph.)
+		         int address = structMembers.Count-1-i;
+		         Symbol S = new Symbol(structMemberArray[address].Item1,structMemberArray[address].Item2,structMemberArray[address].Item3,structMemberArray[address].Item4,structMemberArray[address].Item5,structMemberArray[address].Item6,structMemberArray[address].Item7 );
+		         instantiatedStructMembers.Push(S);
+		         nextfreememberinstaddress++;
+		       }       
+		     }
+		}
+		if(structfound == false){
+		     Console.WriteLine("ERROR - '"+ structname+"' has not been defined. The program will give undefined behaviour if you try and run it");
+		                              //break somehow
+		}
+		
+		Ident(out name);
+		if(structfound!= false){ 
+		  if (external) {
+		     Symbol mySym = new Symbol(name, (int)TastierKind.Var,(int)type, 0, 0,newSymbolPointer,structname);
+		     externalDeclarations.Push(mySym);
+		     Console.WriteLine("Struct instantiated. (name = "+ mySym.Item1+", type = "+mySym.Item2+ ", kind = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+ ", memorypointer = "+mySym.Item6+", structname = '"+mySym.Item7+ "')");
+		   } else {
+		    Symbol mySym = new Symbol(name, (int)TastierKind.Var,(int)type,openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 ==(int)TastierKind.Var),newSymbolPointer,structname);
+		    currentScope.Push(mySym );
+		     Console.WriteLine("Struct instantiated. (name = "+ mySym.Item1+", type = "+mySym.Item2+ ", kind = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+ ", memorypointer = "+mySym.Item6+", structname = '"+mySym.Item7+ "')");
+		   }
+		}else{
+		   Console.WriteLine("I did not try and instantiate '"+name+"', I ignored it. I want to abort compilation here really.");
+		}
+		
+		 //crap
+		   // instantiatedStructMembers.push();
+		           // Console.WriteLine( structMemberArray[address].Item1);
+		
+		
+		
+		        // [ds.Item3]
+		       // Console.WriteLine( MemberArray[i].Item1);
+		       //copy the members into the instantiated members stack
+		       //make a new symbol for the struct,pointing at the previous.
+		
+		        // instantiatedStructMembers
+		      //  THE MEMBERS NEED TO HAVE TO HAVE THE SAME SCOPE AS THE PARENT
+		
+		
+		Expect(21);
 	}
 
 	void Stat() {
@@ -885,8 +962,10 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			while (StartOf(4)) {
 				if (StartOf(3)) {
 					Stat();
-				} else {
+				} else if (la.kind == 32 || la.kind == 33) {
 					VarDecl(external);
+				} else {
+					StructInstDecl(external);
 				}
 			}
 			Expect(13);
@@ -972,9 +1051,11 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		
 		Expect(12);
 		while (StartOf(5)) {
-			if (la.kind == 34) {
+			if (la.kind == 35) {
 				StructDef(external);
-			} else if (la.kind == 32 || la.kind == 33 || la.kind == 34) {
+			} else if (la.kind == 35) {
+				StructInstDecl(external);
+			} else if (la.kind == 32 || la.kind == 33) {
 				VarDecl(external);
 			} else if (la.kind == 9) {
 				ProcDecl();
@@ -1084,43 +1165,62 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 	}
 
 	void StructDef(bool external) {
-		string structname; int size =0; int pointer=0; string name; TastierType type; Scope currentScope = openScopes.Peek(); 
+		string structname; int size =0; bool structnameUnique = true; int pointer=0; string name; TastierType type; Scope currentScope = openScopes.Peek(); 
 		
-		Expect(34);
+		Expect(35);
 		Ident(out structname);
 		Expect(12);
+		DefinedStruct[] definedStructsArray = definedStructs.ToArray();
+		structnameUnique = true; //assume structname is unique
+		for(int i=0; i< definedStructsArray.Length; i++){
+		   if(definedStructsArray[i].Item1 == structname){
+		      structnameUnique = false;
+		   }
+		}
+		if(structnameUnique == false){
+		 Console.WriteLine("ERROR - struct '"+structname+"' is already defined. Ignoring it.");
+		}     
 		
 		Type(out type);
 		Ident(out name);
-		Symbol Symb = new Symbol(name, (int)TastierKind.Var,(int)type, -1, -1,-1,"struct member");
-		pointer = nextfreememberaddress; //?
-		structMembers.Push(Symb );
-		size = size+1;
+		if ( structnameUnique == true){     
+		  Symbol Symb = new Symbol(name, (int)TastierKind.Var,(int)type, -1, -1,-1,"struct member");
+		   pointer = nextfreememberaddress; //?
+		  structMembers.Push(Symb );
+		  size = size+1;
+		}
 		
 		Expect(21);
-		while (la.kind == 32 || la.kind == 33 || la.kind == 34) {
+		while (la.kind == 32 || la.kind == 33) {
 			Type(out type);
 			Ident(out name);
+			if ( structnameUnique == true){
+			
 			Symbol Symb2 = new Symbol(name, (int)TastierKind.Var,(int)type, -1, -1,-1,"struct member");
 			structMembers.Push(Symb2 );
 			size = size+1;
+			}
 			
 			Expect(21);
 		}
 		Expect(36);
-		nextfreememberaddress =  nextfreememberaddress+size; 
-		DefinedStruct newStruct = new DefinedStruct(structname, size, pointer);
-		definedStructs.Push(newStruct);
-		Console.WriteLine("=> Struct defined. (name = "+ newStruct.Item1+", size = "+newStruct.Item2+", pointer = "+newStruct.Item3);
-		Console.WriteLine("   (You could print out the information about the members here if you want).");
+		if ( structnameUnique == true){ 
+		 nextfreememberaddress =  nextfreememberaddress+size; 
+		 DefinedStruct newStruct = new DefinedStruct(structname, size, pointer);
+		 definedStructs.Push(newStruct);
+		 Console.WriteLine("=> Struct defined. (name = "+ newStruct.Item1+", size = "+newStruct.Item2+", pointer = "+newStruct.Item3);
+		 Console.WriteLine("   (You could print out the information about the members here if you want).");
+		}
 		
 	}
 
 	void ExternDecl() {
 		string name; bool external = true; Scope currentScope = openScopes.Peek(); int count = currentScope.Count; 
 		Expect(37);
-		if (la.kind == 32 || la.kind == 33 || la.kind == 34) {
+		if (la.kind == 32 || la.kind == 33) {
 			VarDecl(external);
+		} else if (la.kind == 35) {
+			StructInstDecl(external);
 		} else if (la.kind == 38) {
 			Get();
 			Ident(out name);
@@ -1132,7 +1232,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 	void ConstDecl(bool external) {
 		string name; TastierType type; Scope currentScope = openScopes.Peek(); Symbol sym; 
 		
-		Expect(35);
+		Expect(34);
 		Type(out type);
 		Ident(out name);
 		sym = lookup(openScopes, name);
@@ -1207,9 +1307,6 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		} else if (la.kind == 33) {
 			Get();
 			type = TastierType.Boolean; 
-		} else if (la.kind == 34) {
-			Get();
-			type = TastierType.Struct; 
 		} else SynErr(49);
 	}
 
@@ -1227,9 +1324,9 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 	static readonly bool[,] set = {
 		{T,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x},
 		{x,x,x,x, x,x,x,x, x,x,x,x, x,x,T,T, T,T,T,T, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x},
-		{x,T,x,x, x,x,x,x, x,T,x,x, T,x,x,x, x,x,x,x, x,x,x,x, T,x,T,T, T,T,x,x, T,T,T,x, x,x,x,x, x},
+		{x,T,x,x, x,x,x,x, x,T,x,x, T,x,x,x, x,x,x,x, x,x,x,x, T,x,T,T, T,T,x,x, T,T,x,T, x,x,x,x, x},
 		{x,T,x,x, x,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, x,x,x,x, T,x,T,T, T,T,x,x, x,x,x,x, x,x,x,x, x},
-		{x,T,x,x, x,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, x,x,x,x, T,x,T,T, T,T,x,x, T,T,T,x, x,x,x,x, x},
+		{x,T,x,x, x,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, x,x,x,x, T,x,T,T, T,T,x,x, T,T,x,T, x,x,x,x, x},
 		{x,x,x,x, x,x,x,x, x,T,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, T,T,T,T, x,T,x,x, x}
 
 	};
@@ -1278,8 +1375,8 @@ public class Errors {
 			case 31: s = "\"program\" expected"; break;
 			case 32: s = "\"int\" expected"; break;
 			case 33: s = "\"bool\" expected"; break;
-			case 34: s = "\"struct\" expected"; break;
-			case 35: s = "\"const\" expected"; break;
+			case 34: s = "\"const\" expected"; break;
+			case 35: s = "\"struct\" expected"; break;
 			case 36: s = "\"};\" expected"; break;
 			case 37: s = "\"external\" expected"; break;
 			case 38: s = "\"procedure\" expected"; break;

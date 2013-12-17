@@ -7,13 +7,16 @@
 
 program Test {
 
+struct date{ 
+  int day;
+  int month;
+  int year;
+};
 
-bool atestboolthatisglobal;
-int atestintthatisglobal;
-
-
-//atestintegerthatisglobal := 42;
-
+struct person{
+  int arms;
+  int legs;
+};
 
   void ex7Test() {
     int x;

@@ -113,6 +113,39 @@ COMPILER Tastier
     * Instruction.Item2 -> the actual instruction, as a string
 */
 
+//======================================
+//            STRUCT CODE:
+//======================================
+
+//using DefinedStruct = System.Tuple<string, int, int>; //see Parser.frame
+
+Stack<DefinedStruct> definedStructs = new Stack<DefinedStruct>();
+Stack<Symbol> structMembers  = new Stack<Symbol>();
+int nextfreememberaddress =0;
+/*
+  Stack for defined structs.
+  When we see a new definition of a struct, for example:
+
+  struct date{
+    int day;
+    int month;
+    int year;
+  };
+
+  We push a new DeclaredStruct tuple onto this stack which contains the name,
+  the size, and a pointer into another stack (structMembers) which is where
+  we will put the internal symbols for the member objects. The pointer points
+  to the first element of the struct definition and using the size we can get 
+  to the last element. We will search through the names of these symbols from
+  (ptr) to (ptr+size) to reference them instead of treating the stack like an
+  array because we want to support members of different sizes like arrays or 
+  other stucts. Everytime we instantiate a struct we will search this table 
+  to get all the info that we need.  
+*/
+
+
+
+
 Stack<Scope> openScopes = new Stack<Scope>();
 Scope externalDeclarations = new Scope();
 
@@ -751,7 +784,7 @@ Tastier                         (.  string name; bool external = false; .)
                                     openScopes.Push(new Scope());
                                 .)
   '{'
-  { VarDecl<external> | ProcDecl | ExternDecl | ConstDecl<external> } //modified   | ConstDecl<external>
+  {  StructDef<external> | VarDecl<external> | ProcDecl | ExternDecl | ConstDecl<external> } //modified   | ConstDecl<external>
   '}'                           (.
                                     if (openScopes.Peek().Count == 0) {
                                       Warn("Warning: Program " + name + " is empty ");
@@ -952,6 +985,38 @@ ConstDecl<bool external>        (.
 
 
 
+StructDef<bool external>       (.
+                                string structname; int size =0; int pointer=0; string name; TastierType type; Scope currentScope = openScopes.Peek(); 
+                               .)
+
+= "struct" Ident<out structname> '{'  (. .)
+
+Type<out type> Ident<out name>  (.      
+                                    Symbol Symb = new Symbol(name, (int)TastierKind.Var,(int)type, -1, -1,-1,"struct member");
+                                     pointer = nextfreememberaddress; //?
+                                    structMembers.Push(Symb );
+                                    size = size+1;
+                                .)
+';'
+{
+  Type<out type> Ident<out name>  (.
+                                    Symbol Symb2 = new Symbol(name, (int)TastierKind.Var,(int)type, -1, -1,-1,"struct member");
+                                    structMembers.Push(Symb2 );
+                                    size = size+1;
+                                .)
+';'
+
+}
+
+"};"                             (.
+                                   /*here is where we push to the stack and output debugging info*/
+                                   nextfreememberaddress =  nextfreememberaddress+size; 
+                                   DefinedStruct newStruct = new DefinedStruct(structname, size, pointer);
+                                   definedStructs.Push(newStruct);
+                                   Console.WriteLine("=> Struct defined. (name = "+ newStruct.Item1+", size = "+newStruct.Item2+", pointer = "+newStruct.Item3);
+                                   Console.WriteLine("   (You could print out the information about the members here if you want).");
+                                  .)
+.
 
 
 

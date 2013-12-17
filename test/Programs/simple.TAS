@@ -1,0 +1,15 @@
+
+program Test {
+
+  void Main() {
+
+    int y;
+    y :=41;
+    int x;
+    x:=42;
+    write x;
+    
+  }
+}
+
+

@@ -1,52 +1,61 @@
-.names 5
+.names 2
 .proc Main
-.var 2 d
-.var 2 c
-Const 6
-StoG 3
-Const 9
-StoG 4
-Main: Enter 3
-Const 1
-Sto 0 0
-Const 2
-Sto 0 1
-Const 3
-Sto 0 2
-Const 1
-Const 0
-Neq
-FJmp L$0
-Load 0 0
-Write
-Jmp L$1
-L$0: Nop
-L$1: Nop
-Const 1
-Const 1
-Leq
-FJmp L$2
+.proc ex7Test
+ex7Test: Enter 7
 Load 0 1
 Write
-Jmp L$3
+Const 0
+Sto 0 3
+Jmp L$0
+L$1: Nop
+Load 0 3
+Const 10
+Lss
+Load 0 3
+Const 1
+Add
+Sto 0 3
+FJmp L$2
+Load 0 3
+Write
+L$0: Nop
+Jmp L$1
 L$2: Nop
+Const 111
+Sto 0 4
+Const 999
+Sto 0 5
+Const 2
+Const 1
+Gtr
+FJmp L$3
+Load 0 4
+Sto 0 6
+Jmp L$4
 L$3: Nop
-Const 1
-Const 1
-Geq
-FJmp L$4
-Load 0 2
-Write
-Jmp L$5
+Load 0 5
+Sto 0 6
 L$4: Nop
+Load 0 6
+Write
+Const 2
+Const 1
+Lss
+FJmp L$5
+Load 0 4
+Sto 0 6
+Jmp L$6
 L$5: Nop
-Const 4
-StoG 5
-Const 5
-StoG 6
-LoadG 5
+Load 0 5
+Sto 0 6
+L$6: Nop
+Load 0 6
 Write
-LoadG 6
+Leave
+Ret
+Main: Enter 1
+Load 0 0
 Write
+Call 1 ex7Test
 Leave
 Ret

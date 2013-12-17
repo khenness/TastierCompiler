@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using Symbol = System.Tuple<string, int, int, int, int, int, string>;
-using DeclaredStruct = System.Tuple<string, int,int>;
+using DefinedStruct = System.Tuple<string, int, int>;
 using Instruction = System.Tuple<string,string>;
 using StackAddress = System.Tuple<int, int>;
 
@@ -17,7 +17,7 @@ public class Parser {
 	public const int _EOF = 0;
 	public const int _ident = 1;
 	public const int _number = 2;
-	public const int maxT = 38;
+	public const int maxT = 39;
 
 	const bool T = true;
 	const bool x = false;
@@ -135,6 +135,39 @@ enum TastierType : int {   // types for variables
     * Instruction.Item1 -> label
     * Instruction.Item2 -> the actual instruction, as a string
 */
+
+//======================================
+//            STRUCT CODE:
+//======================================
+
+//using DefinedStruct = System.Tuple<string, int, int>; //see Parser.frame
+
+Stack<DefinedStruct> definedStructs = new Stack<DefinedStruct>();
+Stack<Symbol> structMembers  = new Stack<Symbol>();
+int nextfreememberaddress =0;
+/*
+  Stack for defined structs.
+  When we see a new definition of a struct, for example:
+
+  struct date{
+    int day;
+    int month;
+    int year;
+  };
+
+  We push a new DeclaredStruct tuple onto this stack which contains the name,
+  the size, and a pointer into another stack (structMembers) which is where
+  we will put the internal symbols for the member objects. The pointer points
+  to the first element of the struct definition and using the size we can get 
+  to the last element. We will search through the names of these symbols from
+  (ptr) to (ptr+size) to reference them instead of treating the stack like an
+  array because we want to support members of different sizes like arrays or 
+  other stucts. Everytime we instantiate a struct we will search this table 
+  to get all the info that we need.  
+*/
+
+
+
 
 Stack<Scope> openScopes = new Stack<Scope>();
 Scope externalDeclarations = new Scope();
@@ -360,7 +393,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		} else if (la.kind == 4) {
 			Get();
 			inst = new Instruction("", "Sub"); 
-		} else SynErr(39);
+		} else SynErr(40);
 	}
 
 	void Expr(out TastierType type) {
@@ -426,7 +459,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			inst = new Instruction("", "Geq"); 
 			break;
 		}
-		default: SynErr(40); break;
+		default: SynErr(41); break;
 		}
 	}
 
@@ -485,7 +518,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		} else if (la.kind == 6) {
 			Get();
 			program.Add(new Instruction("", "Const " + 0)); type = TastierType.Boolean; 
-		} else SynErr(41);
+		} else SynErr(42);
 	}
 
 	void Ident(out string name) {
@@ -500,7 +533,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		} else if (la.kind == 8) {
 			Get();
 			inst = new Instruction("", "Div"); 
-		} else SynErr(42);
+		} else SynErr(43);
 	}
 
 	void ProcDecl() {
@@ -695,7 +728,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 					program.Add(new Instruction(endlabel, "Nop"));
 					
 					
-				} else SynErr(43);
+				} else SynErr(44);
 			} else if (la.kind == 10) {
 				Get();
 				Expect(11);
@@ -709,7 +742,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 				string procedureLabel = getLabelForProcedureName(lexicalLevelDifference, sym.Item1);
 				program.Add(new Instruction("", "Call " + lexicalLevelDifference + " " + procedureLabel));
 				
-			} else SynErr(44);
+			} else SynErr(45);
 			break;
 		}
 		case 24: {
@@ -859,7 +892,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			Expect(13);
 			break;
 		}
-		default: SynErr(45); break;
+		default: SynErr(46); break;
 		}
 	}
 
@@ -928,7 +961,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			program.Add(new Instruction("", "Call " + lexicalLevelDifference + " " + procedureLabel));
 			
 			
-		} else SynErr(46);
+		} else SynErr(47);
 	}
 
 	void Tastier() {
@@ -939,11 +972,13 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		
 		Expect(12);
 		while (StartOf(5)) {
-			if (la.kind == 32 || la.kind == 33 || la.kind == 34) {
+			if (la.kind == 34) {
+				StructDef(external);
+			} else if (la.kind == 32 || la.kind == 33 || la.kind == 34) {
 				VarDecl(external);
 			} else if (la.kind == 9) {
 				ProcDecl();
-			} else if (la.kind == 36) {
+			} else if (la.kind == 37) {
 				ExternDecl();
 			} else {
 				ConstDecl(external);
@@ -1048,17 +1083,50 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		
 	}
 
+	void StructDef(bool external) {
+		string structname; int size =0; int pointer=0; string name; TastierType type; Scope currentScope = openScopes.Peek(); 
+		
+		Expect(34);
+		Ident(out structname);
+		Expect(12);
+		
+		Type(out type);
+		Ident(out name);
+		Symbol Symb = new Symbol(name, (int)TastierKind.Var,(int)type, -1, -1,-1,"struct member");
+		pointer = nextfreememberaddress; //?
+		structMembers.Push(Symb );
+		size = size+1;
+		
+		Expect(21);
+		while (la.kind == 32 || la.kind == 33 || la.kind == 34) {
+			Type(out type);
+			Ident(out name);
+			Symbol Symb2 = new Symbol(name, (int)TastierKind.Var,(int)type, -1, -1,-1,"struct member");
+			structMembers.Push(Symb2 );
+			size = size+1;
+			
+			Expect(21);
+		}
+		Expect(36);
+		nextfreememberaddress =  nextfreememberaddress+size; 
+		DefinedStruct newStruct = new DefinedStruct(structname, size, pointer);
+		definedStructs.Push(newStruct);
+		Console.WriteLine("=> Struct defined. (name = "+ newStruct.Item1+", size = "+newStruct.Item2+", pointer = "+newStruct.Item3);
+		Console.WriteLine("   (You could print out the information about the members here if you want).");
+		
+	}
+
 	void ExternDecl() {
 		string name; bool external = true; Scope currentScope = openScopes.Peek(); int count = currentScope.Count; 
-		Expect(36);
+		Expect(37);
 		if (la.kind == 32 || la.kind == 33 || la.kind == 34) {
 			VarDecl(external);
-		} else if (la.kind == 37) {
+		} else if (la.kind == 38) {
 			Get();
 			Ident(out name);
 			Expect(21);
 			externalDeclarations.Push(new Symbol(name, (int)TastierKind.Proc, (int)TastierType.Undefined, 1, -1,-1,"not a struct")); 
-		} else SynErr(47);
+		} else SynErr(48);
 	}
 
 	void ConstDecl(bool external) {
@@ -1142,7 +1210,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		} else if (la.kind == 34) {
 			Get();
 			type = TastierType.Struct; 
-		} else SynErr(48);
+		} else SynErr(49);
 	}
 
 
@@ -1157,12 +1225,12 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 	}
 
 	static readonly bool[,] set = {
-		{T,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x},
-		{x,x,x,x, x,x,x,x, x,x,x,x, x,x,T,T, T,T,T,T, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x},
-		{x,T,x,x, x,x,x,x, x,T,x,x, T,x,x,x, x,x,x,x, x,x,x,x, T,x,T,T, T,T,x,x, T,T,T,x, x,x,x,x},
-		{x,T,x,x, x,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, x,x,x,x, T,x,T,T, T,T,x,x, x,x,x,x, x,x,x,x},
-		{x,T,x,x, x,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, x,x,x,x, T,x,T,T, T,T,x,x, T,T,T,x, x,x,x,x},
-		{x,x,x,x, x,x,x,x, x,T,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, T,T,T,T, T,x,x,x}
+		{T,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x},
+		{x,x,x,x, x,x,x,x, x,x,x,x, x,x,T,T, T,T,T,T, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x},
+		{x,T,x,x, x,x,x,x, x,T,x,x, T,x,x,x, x,x,x,x, x,x,x,x, T,x,T,T, T,T,x,x, T,T,T,x, x,x,x,x, x},
+		{x,T,x,x, x,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, x,x,x,x, T,x,T,T, T,T,x,x, x,x,x,x, x,x,x,x, x},
+		{x,T,x,x, x,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, x,x,x,x, T,x,T,T, T,T,x,x, T,T,T,x, x,x,x,x, x},
+		{x,x,x,x, x,x,x,x, x,T,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, T,T,T,T, x,T,x,x, x}
 
 	};
 } // end Parser
@@ -1212,19 +1280,20 @@ public class Errors {
 			case 33: s = "\"bool\" expected"; break;
 			case 34: s = "\"struct\" expected"; break;
 			case 35: s = "\"const\" expected"; break;
-			case 36: s = "\"external\" expected"; break;
-			case 37: s = "\"procedure\" expected"; break;
-			case 38: s = "??? expected"; break;
-			case 39: s = "invalid AddOp"; break;
-			case 40: s = "invalid RelOp"; break;
-			case 41: s = "invalid Factor"; break;
-			case 42: s = "invalid MulOp"; break;
-			case 43: s = "invalid Stat"; break;
+			case 36: s = "\"};\" expected"; break;
+			case 37: s = "\"external\" expected"; break;
+			case 38: s = "\"procedure\" expected"; break;
+			case 39: s = "??? expected"; break;
+			case 40: s = "invalid AddOp"; break;
+			case 41: s = "invalid RelOp"; break;
+			case 42: s = "invalid Factor"; break;
+			case 43: s = "invalid MulOp"; break;
 			case 44: s = "invalid Stat"; break;
 			case 45: s = "invalid Stat"; break;
-			case 46: s = "invalid SimpleAssignment"; break;
-			case 47: s = "invalid ExternDecl"; break;
-			case 48: s = "invalid Type"; break;
+			case 46: s = "invalid Stat"; break;
+			case 47: s = "invalid SimpleAssignment"; break;
+			case 48: s = "invalid ExternDecl"; break;
+			case 49: s = "invalid Type"; break;
 
 			default: s = "error " + n; break;
 		}

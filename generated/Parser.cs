@@ -143,7 +143,7 @@ enum TastierType : int {   // types for variables
 //using DefinedStruct = System.Tuple<string, int, int>; //see Parser.frame
 
 Stack<DefinedStruct> definedStructs = new Stack<DefinedStruct>();
-Stack<Symbol> structMembers  = new Stack<Symbol>();
+Stack<Symbol> structMembers  = new Stack<Symbol>(); //for defined, not instantiated.
 int nextfreememberaddress =0;
 int nextfreememberinstaddress =0;
 
@@ -293,13 +293,90 @@ Symbol _lookup(Scope scope, string name) {
   return null;
 }
 
+
+Symbol structmemberlookup(Symbol s, string remainder){
+
+/*assuming no other dots FOR THE MOMENT.*/
+
+/*find the range to search for the symbol in instantiatedStructMembers*/
+int size = 0;
+foreach(DefinedStruct ds in definedStructs){
+   if(ds.Item1 == s.Item7){
+      size = ds.Item2;
+      Console.WriteLine("Found the size of a: "+ds.Item1+". (size = "+ds.Item2+")");
+   }
+}
+int startaddress =s.Item6;
+int endaddress = startaddress+size;
+
+Console.WriteLine("startaddress for members of "+s.Item1+" is: "+startaddress);
+Console.WriteLine("endaddress for members of "+s.Item1+" is: "+endaddress);
+
+/*now that we now have the range, actually search for the symbol in instantiatedStructMembers*/
+ Symbol[] insantiatedStructMemberArray = instantiatedStructMembers.ToArray();
+       int x =0;
+       foreach(Symbol sy in insantiatedStructMemberArray ){
+          Console.WriteLine("	Array element: "+x+" is: "+sy.Item1);
+          x++;
+       }
+      /*adjust the addresses because of the array conversion*/     
+       int temp = startaddress;
+       startaddress = instantiatedStructMembers.Count-endaddress;
+       endaddress = instantiatedStructMembers.Count-temp;
+       Console.WriteLine("The number of elements on the stack is: "+instantiatedStructMembers.Count);
+       Console.WriteLine("Adjusted startaddress for members of "+s.Item1+" is: "+startaddress);
+       Console.WriteLine("Adjusted endaddress for members of "+s.Item1+" is: "+endaddress);
+
+       Symbol foundSym = null;
+       for(int i = startaddress; i< endaddress; i++){
+          if(insantiatedStructMemberArray[i].Item1 == remainder){
+            foundSym = insantiatedStructMemberArray[i];
+          }
+          Console.WriteLine("Looking through: "+ insantiatedStructMemberArray[i].Item1);
+       }
+       return foundSym;
+}
+
 Symbol lookup(Stack<Scope> scopes, string name) {
   int stackFrameOffset = 0;
   int variableOffset = 0;
 
+  //run through name char by char, look for a '.'
+  //if you find a '.' set a compoundname flag
+  //continue on in this method using the first bit of the string before the '.', save the remainder.
+  //you will find the instantiated struct on the symbol table if it is there.
+  //when you find the struct, call a special method to lookup the symbol of its members. we'll have one for structs, another for arrays.
+  //Recursively apply this method if necessary as there may be another '.' in the remainder string eg: labelA.labelB.labelC 
+
+  int pos =0;
+  string symbolstring="";
+  string remainderstring="";
+  bool structstring = false;
+
+  while(pos<name.Length && name[pos] != '.'){
+    symbolstring = symbolstring + name[pos];
+    pos++;
+  }  
+  pos++; //skip over the '.', this is fine because labels need at least one character, you can't have "label."
+  while(pos < name.Length){
+    remainderstring = remainderstring+ name[pos];
+    pos++;
+    structstring = true;
+  }
+ // Console.WriteLine("symbolstring = "+symbolstring);
+ // Console.WriteLine("remainderstring = "+remainderstring);
+ // Console.WriteLine("compoundstring flag = "+compoundstring);
+
+
+
+
+
   foreach (Scope scope in scopes) {
     foreach (Symbol s in scope) {
-      if (s.Item1 == name) {
+      if (s.Item1 == symbolstring) {
+        if( structstring == true){
+           return structmemberlookup(s, remainderstring);
+        }       
         return s;
       }
       else {
@@ -647,6 +724,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		
 		Expect(35);
 		Ident(out structname);
+		int count = 1;  //count up the members. Leave space for the struct symbol itself.
 		Symbol[] structMemberArray = structMembers.ToArray();
 		foreach (DefinedStruct ds in definedStructs) {
 		  if(ds.Item1 == structname){
@@ -661,7 +739,10 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		         // to an array first and in doing that you end flipping the stupid thing
 		         // around in memory. Harrumph.)
 		         int address = structMembers.Count-1-i;
-		         Symbol S = new Symbol(structMemberArray[address].Item1,structMemberArray[address].Item2,structMemberArray[address].Item3,structMemberArray[address].Item4,structMemberArray[address].Item5,structMemberArray[address].Item6,structMemberArray[address].Item7 );
+		         Symbol S = new Symbol(structMemberArray[address].Item1,structMemberArray[address].Item2,structMemberArray[address].Item3,openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 ==(int)TastierKind.Var)+count,structMemberArray[address].Item6,structMemberArray[address].Item7 );
+		         //comeback
+		         Console.WriteLine("	struct member created. (name = "+ S.Item1+", type = "+S.Item2+ ", kind = "+S.Item3+", stackframe = "+S.Item4+", stackframeoffset = "+S.Item5+ ", memorypointer = "+S.Item6+", structname = '"+S.Item7+ "')");
+		         count++;
 		         instantiatedStructMembers.Push(S);
 		         nextfreememberinstaddress++;
 		       }       
@@ -679,7 +760,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		     externalDeclarations.Push(mySym);
 		     Console.WriteLine("Struct instantiated. (name = "+ mySym.Item1+", type = "+mySym.Item2+ ", kind = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+ ", memorypointer = "+mySym.Item6+", structname = '"+mySym.Item7+ "')");
 		   } else {
-		    Symbol mySym = new Symbol(name, (int)TastierKind.Var,(int)type,openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 ==(int)TastierKind.Var),newSymbolPointer,structname);
+		    Symbol mySym = new Symbol(name,(int)TastierKind.Var,(int)type,openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 ==(int)TastierKind.Var),newSymbolPointer,structname);
 		    currentScope.Push(mySym );
 		     Console.WriteLine("Struct instantiated. (name = "+ mySym.Item1+", type = "+mySym.Item2+ ", kind = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+ ", memorypointer = "+mySym.Item6+", structname = '"+mySym.Item7+ "')");
 		   }
@@ -710,7 +791,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		switch (la.kind) {
 		case 1: {
 			Ident(out name);
-			sym = lookup(openScopes, name);
+			sym = lookup(openScopes, name);  //deals with the "a.b" scenario now too.
 			if (sym == null) {
 			 sym = _lookup(externalDeclarations, name);
 			 isExternal = true;

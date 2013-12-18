@@ -14,15 +14,15 @@ struct date{
 };
 
 struct person{
-  int arms;
-  int legs;
+  int age;
+  int favouritenumber;
+ // struct date birthday;
 };
 
 
   void ex7Test() {
-    int x;
-    int x;
-    write x;
+    int a;
+    int b;
    
     int x;
     for(x:=0; x <10 x:=x+1;){
@@ -43,15 +43,23 @@ struct person{
   }
 
   void Main() {
-    struct person Eimear;
+    int f;
+    f := 73;
+    write f;
+
     struct date mydate;
     struct hampster myhampster;
     struct person Kevin;
-    int x;
-    bool y;
-   // x:=41;
-    write x;
+    struct person Eimear;
+
+    int d;
+    int e;
+    Kevin.age := 21;
+    write Kevin.age;
+    Kevin.age := Kevin.age + Kevin.age+1;
+    write Kevin.age;
     ex7Test();
+   // struct person Liam;
   }
 }
 

@@ -2,8 +2,6 @@
 .proc Main
 .proc ex7Test
 ex7Test: Enter 6
-Load 0 1
-Write
 Const 0
 Sto 0 2
 Jmp L$0
@@ -53,7 +51,21 @@ Load 0 5
 Write
 Leave
 Ret
-Main: Enter 5
+Main: Enter 6
+Const 73
+Sto 0 0
+Load 0 0
+Write
+Const 21
+Sto 0 3
+Load 0 3
+Write
+Load 0 3
+Load 0 3
+Add
+Const 1
+Add
+Sto 0 3
 Load 0 3
 Write
 Call 1 ex7Test

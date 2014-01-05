@@ -3,10 +3,10 @@ program Test {
 
   void Main() {
 
-    int y;
-    y :=41;
+    int y.e.c;
+    y.e.c :=66;
     int x;
-    x:=42;
+    x:=99;
     write x;
     
   }

@@ -11,12 +11,13 @@ struct date{
   int day;
   int month;
   int year;
+  bool someonesbirthday;
 };
 
 struct person{
   int age;
   int favouritenumber;
- // struct date birthday;
+  struct date birthday;
 };
 
 
@@ -43,22 +44,32 @@ struct person{
   }
 
   void Main() {
-    int f;
-    f := 73;
-    write f;
+ //   int f;
+  //  f := 73;
+  //  write f;
 
-    struct date mydate;
-    struct hampster myhampster;
-    struct person Kevin;
-    struct person Eimear;
-
-    int d;
-    int e;
-    Kevin.age := 21;
-    write Kevin.age;
-    Kevin.age := Kevin.age + Kevin.age+1;
-    write Kevin.age;
-    ex7Test();
+   // struct date mydate;
+   // struct hampster myhampster;
+   // struct person Kevin;
+   // struct person Eimear;
+    
+   // int d;
+   // int e;
+   // Kevin.age := 21;
+   // Eimear.age := 20;
+   // write Kevin.age;
+   // write Eimear.age;
+   // mydate.someonesbirthday := false;
+   // if(mydate.someonesbirthday = false){
+   //   d := 0;
+   //   write d;
+   // }else{
+   //   d := 1;
+   //   write d;
+   // }
+   // Kevin.age := Kevin.age + Eimear.age;
+   // write Kevin.age;
+   // ex7Test();
    // struct person Liam;
   }
 }

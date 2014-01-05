@@ -1,7 +1,8 @@
 COMPILER Tastier
-
 //links for report:
-//Structs (not storing their members in the symbol table)-> http://lists.cs.uiuc.edu/pipermail/llvmdev/2010-November/035930.html
+//Structs (not storing their members in the symbol table)-> 
+//http://lists.cs.uiuc.edu/pipermail/llvmdev/2010-November/035930.html
+
 
 /*
    First, let's declare all the types we're going to use.
@@ -9,16 +10,16 @@ COMPILER Tastier
 
   enum TastierType : int {   // types for variables
     Undefined,
-    InstStruct,
+    Struct_Something,
     Integer,
     Boolean
   };
 
   enum TastierKind : int {  // kinds of symbol
-    Const, 
+    Const,
+    InstStruct,
     Var,
     Proc
-    
   };
 
 /*
@@ -79,8 +80,7 @@ COMPILER Tastier
     * Symbol.Item3 -> type
     * Symbol.Item4 -> stack frame pointer
     * Symbol.Item5 -> variable's address in the stack frame pointed to by Item4, -1 if procedure
-    * Symbol.Item6 -> memory pointer (for Structs. -1 when not in use.) See: http://lists.cs.uiuc.edu/pipermail/llvmdev/2010-November/035930.html for reasoning
-    * Symbol.Item7 -> structname -> string name of stuct that the entry is an instantiation of. "not a struct" if not used.
+    * Symbol.Item6 -> stored data's total size, -1 if procedure
 */
 
   class Scope : Stack<Symbol> {}
@@ -113,48 +113,19 @@ COMPILER Tastier
     * Instruction.Item2 -> the actual instruction, as a string
 */
 
-//======================================
-//            STRUCT CODE:
-//======================================
+/*struct code*/
 
-//using DefinedStruct = System.Tuple<string, int, int>; //see Parser.frame
-
-Stack<DefinedStruct> definedStructs = new Stack<DefinedStruct>();
-Stack<Symbol> structMembers  = new Stack<Symbol>(); //for defined, not instantiated.
-int nextfreememberaddress =0;
-int nextfreememberinstaddress =0;
-
-
-/*
-  Stack for defined structs.
-  When we see a new definition of a struct, for example:
-
-  struct date{
-    int day;
-    int month;
-    int year;
-  };
-
-  We push a new DeclaredStruct tuple onto this stack which contains the name,
-  the size, and a pointer into another stack (structMembers) which is where
-  we will put the internal symbols for the member objects. The pointer points
-  to the first element of the struct definition and using the size we can get 
-  to the last element. We will search through the names of these symbols from
-  (ptr) to (ptr+size) to reference them instead of treating the stack like an
-  array because we want to support members of different sizes like arrays or 
-  other stucts. Everytime we instantiate a struct we will search this table 
-  to get all the info that we need.  
-*/
-
-
-Stack<Symbol> instantiatedStructMembers  = new Stack<Symbol>();
-
-/*
-  The stack for storing the data of instantiated structs. 
-  The actual struct will go on the symbol table and point
-  at this.
+/* 
+ A struct is a collection of stored variables, represented by a dictionary.
+ the dictionary is of names and kinds.
+ the dictionary is basically the list of variables you instantiate.
 
 */
+
+                              
+Dictionary<string, Dictionary<string, int>> definedStructs = new Dictionary<string, Dictionary<string, int>>();
+Dictionary<string, Dictionary<string, int>> instantiatedStructs = new Dictionary<string, Dictionary<string, int>>();
+
 
 
 
@@ -261,6 +232,19 @@ string generateLabel() {
   put the label in, and pop it off the stack.
 */
 
+/*
+bool isStructDefined(string structname){
+     bool returnvalue = true;
+     foreach (KeyValuePair<string, Dictionary<string, int>> VarList in definedStructs){
+            if(VarList.Key == structname){
+                return true;
+            } 
+                                       
+    return false;
+
+}
+*/
+
 Symbol _lookup(Scope scope, string name) {
   foreach (Symbol s in scope) {
       if (s.Item1 == name) {
@@ -270,90 +254,13 @@ Symbol _lookup(Scope scope, string name) {
   return null;
 }
 
-
-Symbol structmemberlookup(Symbol s, string remainder){
-
-/*assuming no other dots FOR THE MOMENT.*/
-
-/*find the range to search for the symbol in instantiatedStructMembers*/
-int size = 0;
-foreach(DefinedStruct ds in definedStructs){
-   if(ds.Item1 == s.Item7){
-      size = ds.Item2;
-      Console.WriteLine("Found the size of a: "+ds.Item1+". (size = "+ds.Item2+")");
-   }
-}
-int startaddress =s.Item6;
-int endaddress = startaddress+size;
-
-Console.WriteLine("startaddress for members of "+s.Item1+" is: "+startaddress);
-Console.WriteLine("endaddress for members of "+s.Item1+" is: "+endaddress);
-
-/*now that we now have the range, actually search for the symbol in instantiatedStructMembers*/
- Symbol[] insantiatedStructMemberArray = instantiatedStructMembers.ToArray();
-       int x =0;
-       foreach(Symbol sy in insantiatedStructMemberArray ){
-          Console.WriteLine("	Array element: "+x+" is: "+sy.Item1);
-          x++;
-       }
-      /*adjust the addresses because of the array conversion*/     
-       int temp = startaddress;
-       startaddress = instantiatedStructMembers.Count-endaddress;
-       endaddress = instantiatedStructMembers.Count-temp;
-       Console.WriteLine("The number of elements on the stack is: "+instantiatedStructMembers.Count);
-       Console.WriteLine("Adjusted startaddress for members of "+s.Item1+" is: "+startaddress);
-       Console.WriteLine("Adjusted endaddress for members of "+s.Item1+" is: "+endaddress);
-
-       Symbol foundSym = null;
-       for(int i = startaddress; i< endaddress; i++){
-          if(insantiatedStructMemberArray[i].Item1 == remainder){
-            foundSym = insantiatedStructMemberArray[i];
-          }
-          Console.WriteLine("Looking through: "+ insantiatedStructMemberArray[i].Item1);
-       }
-       return foundSym;
-}
-
 Symbol lookup(Stack<Scope> scopes, string name) {
   int stackFrameOffset = 0;
   int variableOffset = 0;
 
-  //run through name char by char, look for a '.'
-  //if you find a '.' set a compoundname flag
-  //continue on in this method using the first bit of the string before the '.', save the remainder.
-  //you will find the instantiated struct on the symbol table if it is there.
-  //when you find the struct, call a special method to lookup the symbol of its members. we'll have one for structs, another for arrays.
-  //Recursively apply this method if necessary as there may be another '.' in the remainder string eg: labelA.labelB.labelC 
-
-  int pos =0;
-  string symbolstring="";
-  string remainderstring="";
-  bool structstring = false;
-
-  while(pos<name.Length && name[pos] != '.'){
-    symbolstring = symbolstring + name[pos];
-    pos++;
-  }  
-  pos++; //skip over the '.', this is fine because labels need at least one character, you can't have "label."
-  while(pos < name.Length){
-    remainderstring = remainderstring+ name[pos];
-    pos++;
-    structstring = true;
-  }
- // Console.WriteLine("symbolstring = "+symbolstring);
- // Console.WriteLine("remainderstring = "+remainderstring);
- // Console.WriteLine("compoundstring flag = "+compoundstring);
-
-
-
-
-
   foreach (Scope scope in scopes) {
     foreach (Symbol s in scope) {
-      if (s.Item1 == symbolstring) {
-        if( structstring == true){
-           return structmemberlookup(s, remainderstring);
-        }       
+      if (s.Item1 == name) {
         return s;
       }
       else {
@@ -385,7 +292,7 @@ letter = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".
   tab = '\t'.
 
 TOKENS
-  ident  = letter {letter | digit } {'.' letter {letter | digit}}.
+  ident  = letter {letter | digit} {'.' letter {letter | digit} }.
   number = digit {digit}.
 
 COMMENTS FROM "/*" TO "*/" NESTED
@@ -421,9 +328,9 @@ Expr<out TastierType type>      (.  TastierType type1; Instruction inst; .)
 
 /*------------------------------------------------------------------------*/
 
-Factor<out TastierType type>    (.  int n; Symbol sym; string name; .)
+Factor<out TastierType type>    (.  int n; Symbol sym; string name; string remainder;.)
 =                               (.  type = TastierType.Undefined; .)
-  ( Ident<out name>             (.
+  ( Ident<out name, out remainder>             (.
                                     bool isExternal = false; //CS3071 students can ignore external declarations, since they only deal with compilation of single files.
                                     sym = lookup(openScopes, name);
                                     if (sym == null) {
@@ -472,8 +379,26 @@ Factor<out TastierType type>    (.  int n; Symbol sym; string name; .)
 
 /*------------------------------------------------------------------------*/
 
-Ident<out string name>
-= ident                         (.  name = t.val; .).
+Ident<out string symbolname, out string remainder>      //modified. An Identifier will give you a symbolname and a remainder. 
+= ident                         (.                      //the remainder is anything left after the '.'
+                                    string fullname = t.val;
+                                    symbolname = null;
+                                    remainder = null;
+                                    bool dotfound = false;
+                                    foreach( char c in fullname){
+                                       if(c == '.' && dotfound == false){
+                                         dotfound = true;
+                                       }else{
+                                          if(dotfound == false){
+                                            symbolname = symbolname + c;
+                                         }else{
+                                            remainder = remainder + c; 
+                                          }
+                                       }
+                                    }
+                                   Console.WriteLine("symbolname = '"+symbolname+"' remainder = '"+remainder+"'");
+                                 
+                                .).
 
 /*------------------------------------------------------------------------*/
 
@@ -485,10 +410,10 @@ MulOp<out Instruction inst>
 
 /*------------------------------------------------------------------------*/
 
-ProcDecl                        (.  string name; string label; Scope currentScope = openScopes.Peek(); int enterInstLocation = 0; bool external = false; .)
+ProcDecl                        (.  string name; string remainder; string label; Scope currentScope = openScopes.Peek(); int enterInstLocation = 0; bool external = false; .)
 = "void"
-  Ident<out name>               (.
-                                    currentScope.Push(new Symbol(name, (int)TastierKind.Proc, (int)TastierType.Undefined, openScopes.Count, -1,-1,"not a struct"));
+  Ident<out name, out remainder>               (.
+                                    currentScope.Push(new Symbol(name, (int)TastierKind.Proc, (int)TastierType.Undefined, openScopes.Count, -1, -1));
                                     openScopes.Push(new Scope());
                                     currentScope = openScopes.Peek();
                                 .)
@@ -512,7 +437,7 @@ ProcDecl                        (.  string name; string label; Scope currentScop
                                     */
                                 .)
 
-  { VarDecl<external> | StructInstDecl<external> | Stat |  (.
+  { VarDecl<external> | Stat |  (.
                                     openLabels.Push(generateLabel());
                                     program.Add(new Instruction("", "Jmp " + openLabels.Peek()));
                                     /*
@@ -563,16 +488,72 @@ SimExpr<out TastierType type>   (.  TastierType type1; Instruction inst; .)
 /*------------------------------------------------------------------------*/
 
 
-//
+StructDef<bool external>       (.
+                                string structname; string nestedstructname; string memberremainder;  string remainder; bool structnameUnique = true;  string membername; TastierType type; Scope currentScope = openScopes.Peek(); 
+                               .)
+
+= "struct" Ident<out structname, out remainder> '{'  
+                                         (. //check its not already defined, give an error if it is.
+                                         // Can't have two "date" objects for example.
+                                          structnameUnique = true;
+                                          foreach (KeyValuePair<string, Dictionary<string, int>> VarList in definedStructs){
+                                             if(VarList.Key == structname){
+                                               SemErr("ERROR - struct '"+structname+"' is already defined.");
+                                             }
+                                          }
+ 
+                                              
+                                        .)
+//you must have at least one member
+Type<out type, out nestedstructname> Ident<out membername, out memberremainder> (.  
+                                                      if(type == TastierType.Struct_Something){
+                                                         bool valid = false;
+                                                         foreach (KeyValuePair<string, Dictionary<string, int>> VarList in definedStructs){
+                                                            if(VarList.Key == nestedstructname){
+                                                               valid = true; 
+                                                            }
+                                                         }
+                                                         if(valid == false){
+                                                           SemErr("ERROR - struct '"+nestedstructname+"'"+" has not been defined ");
+                                                         }
+                                                         /*add struct members to dictionary in the special format*/
+                                                         
+                                                      }else{
+                                                        /*add regular variables to dictionary*/
+                                                      }
+                                                   
+                                                   .)
+
+';'
+
+{
+/*
+  Type<out type, out nestedstructname> Ident<out membername, out memberremainder>  (.
+                                                      .)
+';'
+*/
+}
+
+"};"                             (.
+                                   /*here is where we push to the stack and output debugging info*/
+                                  
+                                    //nextfreememberaddress =  nextfreememberaddress+size; 
+                                     //DefinedStruct newStruct = new DefinedStruct(structname, size, pointer);
+                                     //definedStructs.Push(newStruct);
+                                     //Console.WriteLine("=> Struct defined. (name = "+ newStruct.Item1+", size = "+newStruct.Item2+", pointer = "+newStruct.Item3);
+                                     //Console.WriteLine("   (You could print out the information about the members here if you want).");
+                                  .)
+.
+
 
 
 
 // Used only in my "for" loop. Its just a "Stat" with the non-assignment stuff taken out. 
 
-SimpleAssignment                (.  TastierType type; string name; Symbol sym; bool external = false;  bool isExternal = false; .)
+SimpleAssignment                (.  TastierType type; string name; string remainder; Symbol sym; bool external = false;  bool isExternal = false; .)
 
 
-= Ident<out name>               (.
+= Ident<out name, out remainder>               (.
                                     sym = lookup(openScopes, name);
                                     if (sym == null) {
                                       sym = _lookup(externalDeclarations, name);
@@ -621,10 +602,10 @@ SimpleAssignment                (.  TastierType type; string name; Symbol sym; b
 
 
 
-Stat                            (.  TastierType type; TastierType typeA; TastierType typeB;  string name; Symbol sym; bool external = false; bool isExternal = false; .)
+Stat                            (.  TastierType type; TastierType typeA; TastierType typeB;  string remainder; string name; Symbol sym; bool external = false; bool isExternal = false; .)
 
-= Ident<out name>               (.
-                                    sym = lookup(openScopes, name);  //deals with the "a.b" scenario now too.
+= Ident<out name, out remainder>               (.  
+                                    sym = lookup(openScopes, name); 
                                     if (sym == null) {
                                       sym = _lookup(externalDeclarations, name);
                                       isExternal = true;
@@ -632,6 +613,8 @@ Stat                            (.  TastierType type; TastierType typeA; Tastier
                                     if (sym == null) {
                                       SemErr("reference to undefined variable " + name);
                                     }
+
+                                    //if sym == struct
                                 .)
    (":="                         (.
                                     if ((TastierKind)sym.Item2 != TastierKind.Var) {
@@ -812,7 +795,7 @@ Stat                            (.  TastierType type; TastierType typeA; Tastier
 
 
 | "read"
-  Ident<out name> ';'           (.
+  Ident<out name, out remainder> ';'           (.
                                     sym = lookup(openScopes, name);
                                     if (sym == null) {
                                       sym = _lookup(externalDeclarations, name);
@@ -863,17 +846,17 @@ Stat                            (.  TastierType type; TastierType typeA; Tastier
                                  .)
 }';'
 
- | '{' { Stat | VarDecl<external> |  StructInstDecl<external> } '}' .
+ | '{' { Stat | VarDecl<external> } '}' .
 
 /*------------------------------------------------------------------------*/
 
-Tastier                         (.  string name; bool external = false; .)
+Tastier                         (.  string name; string remainder; bool external = false; .)
 = "program"
-  Ident<out name>               (.
+  Ident<out name, out remainder>               (.
                                     openScopes.Push(new Scope());
                                 .)
   '{'
-  {  StructDef<external> | StructInstDecl<external> |VarDecl<external> | ProcDecl | ExternDecl | ConstDecl<external> } //modified   | ConstDecl<external>
+  {  StructDef<external> | VarDecl<external> | ProcDecl | ExternDecl | ConstDecl<external> } //modified   | ConstDecl<external>
   '}'                           (.
                                     if (openScopes.Peek().Count == 0) {
                                       Warn("Warning: Program " + name + " is empty ");
@@ -986,15 +969,18 @@ Term<out TastierType type>      (.  TastierType type1; Instruction inst; .)
                                 .)
   }.
 
+
+
+
 /*------------------------------------------------------------------------*/
 
-Type<out TastierType type>
-=                               (.  type = TastierType.Undefined; .)
+Type<out TastierType type, out string structname>
+=                               (.  type = TastierType.Undefined; structname = null; .)
+ 
  ( "int"                        (.  type = TastierType.Integer; .)
  | "bool"                       (.  type = TastierType.Boolean; .)
-// | "inststruct"                 (.  type = TastierType.InstStruct; .)
+ | "struct" ident               (.  type = TastierType.Struct_Something;  structname = t.val; .)
  ).
-
 /*------------------------------------------------------------------------*/
 
 //ConstDecl = "const" Ident<out name> Type<out type> ":=" value {',' Ident<out name> Type<out type> ":=" value } ";"
@@ -1002,14 +988,14 @@ Type<out TastierType type>
 //you only get one of these per program, thats what i've decided. You declare all your constants together.
 
 ConstDecl<bool external>        (. 
-                                  string name; TastierType type; Scope currentScope = openScopes.Peek(); Symbol sym; 
+                                  string name; string remainder; TastierType type; string structname; Scope currentScope = openScopes.Peek(); Symbol sym; 
                                 .)
 = "const"
-  Type<out type>
-  Ident<out name>              (. 
+  Type<out type, out structname>
+  Ident<out name, out remainder>              (. 
                                      sym = lookup(openScopes, name);
                                    
-                                      sym = new Symbol(name,(int)TastierKind.Const,(int)type, 0,currentScope.Count(s => s.Item2 == (int)TastierKind.Var || s.Item2 == (int)TastierKind.Const),-1,"not a struct");
+                                      sym = new Symbol(name,(int)TastierKind.Const,(int)type, 0,currentScope.Count(s => s.Item2 == (int)TastierKind.Var || s.Item2 == (int)TastierKind.Const),1);
                                       currentScope.Push(sym);
 
                                   //  }
@@ -1037,10 +1023,10 @@ ConstDecl<bool external>        (.
                                       program.Add(new Instruction("", "Sto " + lexicalLevelDifference + " " + sym.Item5));
                                     }
                                 .)
-   {',' Type<out type>
-        Ident<out name>         (.
+   {',' Type<out type, out structname>
+        Ident<out name, out remainder>         (.
                                    
-                                   sym = new Symbol(name, (int)TastierKind.Const,(int)type,0,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var),-1,"not a struct");
+                                   sym = new Symbol(name, (int)TastierKind.Const,(int)type,0,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var),1);
                                    currentScope.Push(sym);
 
                                     
@@ -1072,168 +1058,45 @@ ConstDecl<bool external>        (.
 
 //---
 
-
-
-StructDef<bool external>       (.
-                                string structname; int size =0; bool structnameUnique = true; int pointer=0; string name; TastierType type; Scope currentScope = openScopes.Peek(); 
-                               .)
-
-= "struct" Ident<out structname> '{'  (. //check its not already defined, give an error if it is.
-                                         // Can't have two "date" objects for example.
-                                          DefinedStruct[] definedStructsArray = definedStructs.ToArray();
-                                          structnameUnique = true; //assume structname is unique
-                                          for(int i=0; i< definedStructsArray.Length; i++){
-                                              if(definedStructsArray[i].Item1 == structname){
-                                                 structnameUnique = false;
-                                              }
-                                          }
-                                          if(structnameUnique == false){
-                                            Console.WriteLine("ERROR - struct '"+structname+"' is already defined. Ignoring it.");
-                                          }     
-                                        .)
-
-Type<out type> Ident<out name>  (.  if ( structnameUnique == true){     
-                                       Symbol Symb = new Symbol(name, (int)TastierKind.Var,(int)type, -1, -1,-1,"struct member");
-                                        pointer = nextfreememberaddress; //?
-                                       structMembers.Push(Symb );
-                                       size = size+1;
-                                    }
-                                .)
-';'
-{
-  Type<out type> Ident<out name>  (.if ( structnameUnique == true){
-
-                                    Symbol Symb2 = new Symbol(name, (int)TastierKind.Var,(int)type, -1, -1,-1,"struct member");
-                                    structMembers.Push(Symb2 );
-                                    size = size+1;
-                                   }
-                                .)
-';'
-
-}
-
-"};"                             (.
-                                   /*here is where we push to the stack and output debugging info*/
-                                   if ( structnameUnique == true){ 
-                                     nextfreememberaddress =  nextfreememberaddress+size; 
-                                     DefinedStruct newStruct = new DefinedStruct(structname, size, pointer);
-                                     definedStructs.Push(newStruct);
-                                     Console.WriteLine("=> Struct defined. (name = "+ newStruct.Item1+", size = "+newStruct.Item2+", pointer = "+newStruct.Item3);
-                                     Console.WriteLine("   (You could print out the information about the members here if you want).");
-                                   }
-                                  .)
-.
-
-
-
-StructInstDecl<bool external>  (.
-                                    string name; string structname; bool structfound = false; int newSymbolPointer=0; TastierType type = TastierType.InstStruct;; Scope currentScope = openScopes.Peek();
-                                 .)
-= "struct" Ident<out structname> (.   
-                                      int count = 1;  //count up the members. Leave space for the struct symbol itself.
-                                      Symbol[] structMemberArray = structMembers.ToArray();
-                                      foreach (DefinedStruct ds in definedStructs) {
-                                         if(ds.Item1 == structname){
-                                            structfound = true;
-                                            newSymbolPointer =  nextfreememberinstaddress;
-
-                                           //STEP 1 - copy the members from the member stack to the
-                                           //          instantiated members stack
-                                             for (int i =ds.Item3; i< (ds.Item3+ds.Item2); i++){
-                                                //this horrendous referencing is necessary because I thought I could do
-                                                // structMembers[i] but it turns out I couldn't. (I had to convert it 
-                                                // to an array first and in doing that you end flipping the stupid thing
-                                                // around in memory. Harrumph.)
-                                                int address = structMembers.Count-1-i;
-                                                Symbol S = new Symbol(structMemberArray[address].Item1,structMemberArray[address].Item2,structMemberArray[address].Item3,openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 ==(int)TastierKind.Var)+count,structMemberArray[address].Item6,structMemberArray[address].Item7 );
-                                                //comeback
-                                                Console.WriteLine("	struct member created. (name = "+ S.Item1+", type = "+S.Item2+ ", kind = "+S.Item3+", stackframe = "+S.Item4+", stackframeoffset = "+S.Item5+ ", memorypointer = "+S.Item6+", structname = '"+S.Item7+ "')");
-                                                count++;
-                                                instantiatedStructMembers.Push(S);
-                                                nextfreememberinstaddress++;
-                                              }       
-                                            }
-                                       }
-                                       if(structfound == false){
-                                            Console.WriteLine("ERROR - '"+ structname+"' has not been defined. The program will give undefined behaviour if you try and run it");
-                                                                     //break somehow
-                                       }
-                                  .)
-
-Ident<out name>                   (.
-                                    //STEP 2 - make a new symbol for the struct, pointing at the previous.
-                                   if(structfound!= false){ 
-                                      if (external) {
-                                         Symbol mySym = new Symbol(name, (int)TastierKind.Var,(int)type, 0, 0,newSymbolPointer,structname);
-                                         externalDeclarations.Push(mySym);
-                                         Console.WriteLine("Struct instantiated. (name = "+ mySym.Item1+", type = "+mySym.Item2+ ", kind = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+ ", memorypointer = "+mySym.Item6+", structname = '"+mySym.Item7+ "')");
-                                       } else {
-                                        Symbol mySym = new Symbol(name,(int)TastierKind.Var,(int)type,openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 ==(int)TastierKind.Var),newSymbolPointer,structname);
-                                        currentScope.Push(mySym );
-                                         Console.WriteLine("Struct instantiated. (name = "+ mySym.Item1+", type = "+mySym.Item2+ ", kind = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+ ", memorypointer = "+mySym.Item6+", structname = '"+mySym.Item7+ "')");
-                                       }
-                                   }else{
-                                       Console.WriteLine("I did not try and instantiate '"+name+"', I ignored it. I want to abort compilation here really.");
-                                   }
-
-                                     //crap
-                                       // instantiatedStructMembers.push();
-                                               // Console.WriteLine( structMemberArray[address].Item1);
-
-
-
-                                            // [ds.Item3]
-                                           // Console.WriteLine( MemberArray[i].Item1);
-                                           //copy the members into the instantiated members stack
-                                           //make a new symbol for the struct,pointing at the previous.
-
-                                            // instantiatedStructMembers
-                                          //  THE MEMBERS NEED TO HAVE TO HAVE THE SAME SCOPE AS THE PARENT
-
-                                   .)';'
-
-. 
-
-
-
 VarDecl<bool external>          (.
-                                    string name; TastierType type; Scope currentScope = openScopes.Peek();
+                                    string name; string remainder; string structname; TastierType type; Scope currentScope = openScopes.Peek();
                                 .)
-= Type<out type>
-  Ident<out name>               (.
+= Type<out type, out structname>
+  Ident<out name, out remainder>               (.
                                     if (external) {
-                                      Symbol mySym = new Symbol(name, (int)TastierKind.Var,(int)type, 0, 0,-1,"not a struct");
+                                      Symbol mySym = new Symbol(name, (int)TastierKind.Var, (int)type, 0, 0,1);
                                       externalDeclarations.Push(mySym);
-                                      Console.WriteLine("Variable declared. (name = "+ mySym.Item1+",type = "+mySym.Item2+ ", kind = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+ ", memorypointer = "+mySym.Item6+", structname = '"+mySym.Item7+ "')");
+                                      Console.WriteLine("Variable declared. (name = "+ mySym.Item1+",type = "+mySym.Item2+ ", kind = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+", size = "+mySym.Item6+ ")");
                                     } else {
-                                     Symbol mySym = new Symbol(name, (int)TastierKind.Var,(int)type,openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var),-1,"not a struct");
+                                     Symbol mySym = new Symbol(name, (int)TastierKind.Var,(int)type, openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var),1);
                                      currentScope.Push(mySym );
-                                      Console.WriteLine("Variable declared. (name = "+ mySym.Item1+", type = "+mySym.Item2+", kind = "+mySym.Item3+", stackframe = "+mySym.Item4+",stackframeoffset = "+mySym.Item5+ ", memorypointer = " +mySym.Item6+", structname = '"+mySym.Item7+ "')");
+                                      Console.WriteLine("Variable declared. (name = "+ mySym.Item1+", type = "+mySym.Item2+", kind = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+", size = "+mySym.Item6+")");
+
                                     }
                                 .)
-  { ',' Ident<out name>         (.
+  { ',' Ident<out name, out remainder>         (.
                                     if (external) {
-                                      Symbol mySym = new Symbol(name, (int)TastierKind.Var, (int)type, 0, 0,-1,"not a struct");
+                                      Symbol mySym = new Symbol(name, (int)TastierKind.Var, (int)type, 0, 0,1);
                                       externalDeclarations.Push(mySym);
-                                      Console.WriteLine("Variable declared. (name = "+ mySym.Item1+", type = "+mySym.Item2+ ", kind = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+ ", memorypointer = "+mySym.Item6+ ", structname = '"+mySym.Item7+"')");
+                                      Console.WriteLine("Variable declared. (name = "+ mySym.Item1+", type = "+mySym.Item2+ ", kind = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+", size = "+mySym.Item6+")");
                                     } else {
-                                     Symbol mySym = new Symbol(name, (int)TastierKind.Var,(int)type,openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var),-1,"not a struct");
+                                     Symbol mySym = new Symbol(name, (int)TastierKind.Var,(int)type,openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var),1);
                                      currentScope.Push(mySym );
-                                      Console.WriteLine("Variable declared. (name = "+ mySym.Item1+", type = "+mySym.Item2+ ", kind = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+ ", memorypointer = "+mySym.Item6+ ", structname = '"+mySym.Item7+"')");
+                                      Console.WriteLine("Variable declared. (name = "+ mySym.Item1+", type = "+mySym.Item2+ ", kind = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+", size = "+mySym.Item6+")");
                                     }
                                 .)
   } ';' (.  .)
+
 .
 
 
 
 
-ExternDecl                      (.  string name; bool external = true; Scope currentScope = openScopes.Peek(); int count = currentScope.Count; .)
+ExternDecl                      (.  string name; string remainder; bool external = true; Scope currentScope = openScopes.Peek(); int count = currentScope.Count; .)
 = "external"
-  ( VarDecl<external> |  StructInstDecl<external>
-  | "procedure" Ident<out name> ';'
-                                (.  externalDeclarations.Push(new Symbol(name, (int)TastierKind.Proc, (int)TastierType.Undefined, 1, -1,-1,"not a struct")); .)
+  ( VarDecl<external>
+  | "procedure" Ident<out name, out remainder> ';'
+                                (.  externalDeclarations.Push(new Symbol(name, (int)TastierKind.Proc, (int)TastierType.Undefined, 1, -1,-1)); .)
   ) .
 
 END Tastier.
-

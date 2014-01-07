@@ -1,14 +1,38 @@
 
 program Test {
+  struct date{
+   int day;
+   int month;
+   int year;
+   bool publicholiday;
+  };
+
+  struct person{
+   int favouritenumber;
+   struct date birthday;
+  };
+
+  struct vehicle{
+   struct person owner;
+   struct date registrationdate;
+  };
 
   void Main() {
+    struct person kevin;
+    struct person eimear;
 
     int y.e.c;
     y.e.c :=66;
     int x;
     x:=99;
+    bool mybool;
     write x;
-    
+    kevin.birthday.day := 21;
+    write kevin.birthday.day;
+    kevin.birthday.day := kevin.birthday.day + 21;
+    write kevin.birthday.day;
+    eimear.birthday.day := kevin.birthday.day -1;
+    write eimear.birthday.day;
   }
 }
 

@@ -1,0 +1,50 @@
+//Kevin Hennessy 11726665
+//Exercise 5 - for loops and conditional assignment.
+
+//To test the for loop, the program should print out 1-10.
+
+//to test the left and right side of the conditional operator, the program should print out 111 and 999 respectively.
+
+program Test {
+
+struct mystruct2{
+int num;
+
+};
+
+struct mystruct1{
+struct mystruct2 examp2;
+int nummy;
+};
+
+struct date{ 
+  int day;
+  int month;
+  int year;
+  bool someonesbirthday;
+  struct mystruct1 examp;
+};
+
+struct person{
+  int age;
+  int favouritenumber;
+  struct date birthday;
+};
+
+
+  void Main() {
+   struct person Kevin;
+   Kevin.age := 21;
+   write Kevin.age;
+   Kevin.birthday.day := 9;
+   Kevin.birthday.month := 7;
+   Kevin.birthday.year := 1992;
+   write Kevin.birthday.day;
+   write Kevin.birthday.month;
+   write Kevin.birthday.year;
+  // Kevin.birthday.examp.nummy := 42;
+   //write Kevin.birthday.examp.nummy;
+  }
+}
+
+

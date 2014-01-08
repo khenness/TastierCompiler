@@ -1,45 +1,35 @@
 
 program Test {
   
-// struct bad{};
-// int x :=99;
-  struct date{
+  struct date {
    int day;
    int month;
    int year;
    bool publicholiday;
-  // struct date recursivedate;
   };
-  struct person{
+ 
+  struct person {
    int favouritenumber;
    struct date birthday;
   };
 
-  struct vehicle{
+  struct vehicle {
    struct person owner;
    struct date registrationdate;
    int numberofwheels;
   };
- 
-  int myintarray[1][1][2];
-  
-  bool  myarray[4][2][2];
-  int myintarray[5];
 
   void Main() {
+     struct date da[4];
+     int ia[4];
+
+
     struct person kevin;
     struct person eimear;
-
-//    int y.e.c;
- //   y.e.c :=66;
-  //  int x;
-   // x:=99;
-  // int myint;
-  // myint := 3;
-   bool myboolarray[5];
-
+    da[3].day := 99;
+    ia[3] := 88;
+    write datearray[3].day;
     bool mybool;
-    write x;
     kevin.birthday.day := 21;
     write kevin.birthday.day;
     kevin.birthday.day := kevin.birthday.day + 21;

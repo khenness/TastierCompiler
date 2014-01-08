@@ -268,8 +268,8 @@ letter = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".
   tab = '\t'.
 
 TOKENS
-  ident  = letter {letter | digit } {'.' letter {letter | digit} }.
   number = digit {digit}.
+  ident  = letter {letter | digit } { ( '.' letter {letter | digit} | '[' digit {digit} ']')  }.
 
 COMMENTS FROM "/*" TO "*/" NESTED
 COMMENTS FROM "//" TO lf
@@ -423,7 +423,7 @@ ProcDecl                        (.  string name; string label; Scope currentScop
                                     */
                                 .)
 
-  {     ArrayDecl<external> | VarDecl<external> | StructDecl<external>   
+  {     VarDecl<external> | StructDecl<external>   
  | Stat |  (.
                                     openLabels.Push(generateLabel());
                                     program.Add(new Instruction("", "Jmp " + openLabels.Peek()));
@@ -510,11 +510,10 @@ InternalStruct<string parentstruct>        (. TastierType type; TastierKind kind
 
 
 StructDecl<bool external>       (.
-                                string structname; int dimensions = 0; Scope currentScope = openScopes.Peek(); string instancename; TastierKind kind = TastierKind.Var;  bool structnameUnique = true;  string membername; TastierType type;
+                                 string structname2; int n; int total =1; Queue<int> numElementsQueue = new Queue<int>();  string structname; int dimensions = 0; Scope currentScope = openScopes.Peek(); string instancename; TastierKind kind = TastierKind.Var;  bool structnameUnique = true;  string membername; TastierType type = TastierType.Undefined;
                                .)
 
-= "struct" Ident<out structname>
-(
+=  "struct"   Ident<out structname> ( 
 
 /*struct definition*/
 
@@ -546,10 +545,11 @@ StructDecl<bool external>       (.
                                               kind = TastierKind.Var;
                                               definedStructs[structname].Add(membername, new StructMember((int)type, (int)kind));
                                             .)
-';')
+';'
+)
 }
 
-"};"                             (.
+"};"                              (.
                                    /* Debugging info*/                                  
                                     Console.WriteLine("Struct '"+structname+"' defined.  Attributes=(");
                                     foreach (KeyValuePair<string, StructMember> kvp in definedStructs[structname]){
@@ -557,10 +557,10 @@ StructDecl<bool external>       (.
                                     }
                                     Console.WriteLine( ")" );
                                   .)
-|
+ |
 /*struct instantiation*/
 
- Ident<out instancename> ( ';'
+   Ident<out instancename>  ( ';' 
                                  (.
                                   if(definedStructs.ContainsKey(structname) == true){
                                   Console.WriteLine("Struct '"+instancename+"' of type '"+structname+"' instantiated. (");
@@ -580,35 +580,92 @@ StructDecl<bool external>       (.
 
 
                                  .) 
-/*declaring a struct array  -- not finished*/
-|   '[' number ']'
+
+
+/*declaring a struct array */
+ |   '[' (. dimensions = 1; .)
+ number
                                            (.
 
                                               /*does structname exist?*/
                                              if(definedStructs.ContainsKey(structname) == false){
                                                 SemErr("ERROR - struct '"+structname+"' has not been defined.");
                                              }
-                                               dimensions = dimensions+1;
-                                          .)
+
+                                             n = Convert.ToInt32(t.val) ;
+                                             total = total * (n+1);  //total is the total number of elements we will generate    
+                                             numElementsQueue.Enqueue(n);
+                                    .)
+']'
+
 /*multidimensional*/
-{'[' number ']'                           (.  dimensions = dimensions+1;.)
+{'[' number ']'                           (.  dimensions = dimensions+1;
+                                              n = Convert.ToInt32(t.val);
+                                              total = total * (n+1);   //total is the number of elements we will generate.
+                                              numElementsQueue.Enqueue(n);
+                                          .)
 
 
 
-}  ';'                                       (. /*does array exist already?*/
+}  ';'                                       (.  
+                                              /*does array exist already?*/
+                                              string structstring = "struct_"+structname;
                                               //We are keeping a list of arrays declared in the program.
                                               foreach(ArraySymbol AS in declaredArrays){
-                                                 if(AS.Item1 == instancename && AS.Item2 == structname && AS.Item3 == dimensions){
+                                                 if(AS.Item1 == instancename && AS.Item2 == structstring && AS.Item3 == dimensions){
                                                     SemErr("ERROR - Array already defined");
                                                  }
                                               }
-                                              ArraySymbol newAS = new ArraySymbol(instancename, "struct_"+ structname, dimensions);
+                                              ArraySymbol newAS = new ArraySymbol(instancename, structstring, dimensions);
                                               declaredArrays.Add(newAS);
-                                              Console.WriteLine("Array '"+instancename+"' declared. Type = '"+newAS.Item2+"' Number of dimensions = "+dimensions+". Members(");
-                                              Console.WriteLine("   <to be done>");
-                                              Console.WriteLine(")");
+                                              Console.WriteLine("Struct Array '"+instancename+"' declared. Type = '"+newAS.Item2+"' Number of dimensions = "+dimensions+". Members(");
+                                              
+
+
+                                         /*Algorithim to generate all array members*/
+                                         Dictionary<int, string> Dict = new Dictionary<int, string>();
+                                         for (int i =0; i< total; i++){
+                                             Dict.Add(i, instancename);
+                                         }     
+                                         int beforeincrement = total;
+                                         for(int i =0; i< dimensions; i++){
+                                               
+                                               int mynum = numElementsQueue.Dequeue();
+                                                beforeincrement = (beforeincrement / (mynum+1));
+                                               int writevalue = 0;
+                                               int count =0;
+                                               Console.WriteLine(">   beforeincrement = "+beforeincrement+", mynum = "+mynum+"");
+                                              // Dict[0] =  Dict[0] + "["+writevalue+"]";
+
+                                               for(int j =0; j< total; j++){
+                                                  if(count == beforeincrement){
+                                                     writevalue++;
+                                                     writevalue = writevalue % (mynum+1);
+                                                     count = 0;
+                                                  } 
+                                                  count++;
+
+                                                  Dict[j] =  Dict[j] + "["+writevalue+"]";
+
+                                               }
+                                         }
+                                        // TastierType type = TastierType.Undefined;
+                                         for(int i =0; i< total; i++){
+                                            /*make a new symbol*/
+                                             foreach (KeyValuePair<string, StructMember> kvp in definedStructs[structname]){
+                                                 Symbol mySym = new Symbol(Dict[i]+"."+kvp.Key, (int)TastierKind.Var, kvp.Value.Item1, openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
+                                                  Console.WriteLine("     Variable '"+ mySym.Item1+"' declared. = (kind = "+mySym.Item2+ ", type = "+mySym.Item3+", sframe = "+mySym.Item4+", offset = "+mySym.Item5+"),");
+                                                   currentScope.Push(mySym);
+                                              }
+                                           // Console.WriteLine("    "+Dict[i]);
+                                         }
+                                         Console.WriteLine(")");
+
+
 
                                          .)
+  
+
 )
 
 ) 
@@ -619,10 +676,20 @@ StructDecl<bool external>       (.
 
 // Used only in my "for" loop. Its just a "Stat" with the non-assignment stuff taken out. 
 
-SimpleAssignment                (.  TastierType type; string name; Symbol sym; bool external = false;  bool isExternal = false; .)
+SimpleAssignment                (.  string newname; TastierType type; string name; Symbol sym; bool external = false;  bool isExternal = false; .)
 
 
-= Ident<out name>               (.
+= Ident<out name>   
+
+/*{ 
+ '[' number ']'                        (. 
+                                        int  n = Convert.ToInt32(t.val);  
+                                        name = name + "["+n+"]"; .) 
+/* | '.' Ident<out newname> (. name = name+"."+newname;  .) )*/
+
+}*/
+
+                                   (.
                                     sym = lookup(openScopes, name);
                                     if (sym == null) {
                                       sym = _lookup(externalDeclarations, name);
@@ -671,9 +738,17 @@ SimpleAssignment                (.  TastierType type; string name; Symbol sym; b
 
 
 
-Stat                            (.  TastierType type; TastierType typeA; TastierType typeB;  string name; Symbol sym; bool external = false; bool isExternal = false; .)
+Stat                            (.  string newname; TastierType type; TastierType typeA; TastierType typeB;  string name; Symbol sym; bool external = false; bool isExternal = false; .)
 
-= Ident<out name>               (.
+= Ident<out name>
+{
+ '[' number ']'                        (.
+                                        int  n = Convert.ToInt32(t.val);
+                                        name = name + "["+n+"]"; .)
+/* |  '.' Ident<out newname> (. name = name+"."+newname;  .) ) */
+}
+
+               (.
                                     sym = lookup(openScopes, name);
                                     if (sym == null) {
                                       sym = _lookup(externalDeclarations, name);
@@ -913,7 +988,7 @@ Stat                            (.  TastierType type; TastierType typeA; Tastier
                                  .)
 }';'
 
- | '{' { Stat | ArrayDecl<external> | VarDecl<external> | StructDecl<external>   } '}' .
+ | '{' { Stat  | StructDecl<external> | VarDecl<external>   } '}' .
 
 /*------------------------------------------------------------------------*/
 
@@ -933,7 +1008,7 @@ Tastier                         (.  string name; bool external = false; .)
                                     openScopes.Push(new Scope());
                                 .)
   '{'
-  {   StructDecl<external>  | ArrayDecl<external> |  VarDecl<external> |ProcDecl | ExternDecl | ConstDecl<external> } //modified   | ConstDecl<external>
+  {   StructDecl<external>  | VarDecl<external> |ProcDecl | ExternDecl | ConstDecl<external> } //modified   | ConstDecl<external>
   '}'                           (.
                                     if (openScopes.Peek().Count == 0) {
                                       Warn("Warning: Program " + name + " is empty ");
@@ -1201,57 +1276,29 @@ VarDecl<bool external>          (.
                                 .)
   } */ (';'  | 
 /*array declaration*/
+                                (.
+                                 int n; int total =1; Queue<int> numElementsQueue = new Queue<int>();
+                                 string indexname;  
+                               .)
 
-) 
-
-
-
-
-.
-
-ArrayDecl<bool external>  
-                               (.    int n; int total =1; Queue<int> numElementsQueue = new Queue<int>(); string indexname; int dimensions; string name; TastierType type; Scope currentScope = openScopes.Peek();
-                                .)
-= Type<out type>
-  Ident<out name> 
-    
 /*array declaration*/
-  '[' (.
-                                         dimensions = 1;
-       .)
+  '['                              (. dimensions = 1; .)
   number                           (.                      
-
                                           n = Convert.ToInt32(t.val) ;
                                           total = total * (n+1);
                                          numElementsQueue.Enqueue(n);
-                                        // Console.WriteLine("number of elements = "+n+".");
-                                          string symbolname;
-                                          for(int i=0; i<n; i++){
- //                                           symbolname = name+"["+i.ToString()+"]";
-   //                                          Console.WriteLine("symbolname = "+symbolname+".");
-
-                                          }
-                                     .)
-
-            
-
-                                     
+                                     .)                                     
 ']'
-
 
 /*multidimensional*/
 {  '[' number                           (.
-
                                          dimensions = dimensions+1;
                                          n = Convert.ToInt32(t.val);
                                          total = total * (n+1);   //total is the number of elements we will generate.
                                          numElementsQueue.Enqueue(n);
-
                                          .)
-
-']' 
-
-} ';' (.                                 string typestring = "undefined";
+']' } ';'                                (.
+                                          string typestring = "undefined";
                                          if(type == TastierType.Integer){
                                             typestring = "int";
                                          }else if(type == TastierType.Boolean){
@@ -1262,14 +1309,17 @@ ArrayDecl<bool external>
                                        
                                          /*does array exist already?*/
                                               //We are keeping a list of arrays declared in the program.
-                                              foreach(ArraySymbol AS in declaredArrays){
+                           
+                                             foreach(ArraySymbol AS in declaredArrays){
                                                  if(AS.Item1 == name && AS.Item2 == typestring && AS.Item3 == dimensions){
                                                     SemErr("ERROR - Array '"+name+"' already defined");
                                                  }
                                               }
                                          declaredArrays.Add(new ArraySymbol(name, typestring, dimensions));
                                          Console.WriteLine("Array '"+name+"' declared. Type = '"+typestring+"' Number of dimensions = "+dimensions+".");
-                            //           Console.WriteLine("   <to be done>");
+
+
+
 
 
                                          /*Algorithim to generate all array members*/
@@ -1304,12 +1354,11 @@ ArrayDecl<bool external>
                                          Symbol mySym = new Symbol(Dict[i], (int)TastierKind.Var, (int)type, openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
                                           Console.WriteLine("     Variable "+ mySym.Item1+" declared. = (kind = "+mySym.Item2+ ", type = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+"),");
                                            currentScope.Push(mySym);
-                                           // Console.WriteLine("    "+Dict[i]);
                                          }
                                          Console.WriteLine(")");
+                                      .)
 
- .)
-
+)
 .
 
 

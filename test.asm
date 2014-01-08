@@ -1,27 +1,21 @@
 .names 1
 .proc Main
-Main: Enter 13
-Const 99
-Sto 0 10
-Const 3
-Sto 0 11
-Load 0 10
-Write
+Main: Enter 41
 Const 21
-Sto 0 1
-Load 0 1
+Sto 0 31
+Load 0 31
 Write
-Load 0 1
+Load 0 31
 Const 21
 Add
-Sto 0 1
-Load 0 1
+Sto 0 31
+Load 0 31
 Write
-Load 0 1
+Load 0 31
 Const 1
 Sub
-Sto 0 6
-Load 0 6
+Sto 0 36
+Load 0 36
 Write
 Leave
 Ret

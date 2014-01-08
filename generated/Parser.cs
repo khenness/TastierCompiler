@@ -18,8 +18,8 @@ namespace Tastier {
 
 public class Parser {
 	public const int _EOF = 0;
-	public const int _ident = 1;
-	public const int _number = 2;
+	public const int _number = 1;
+	public const int _ident = 2;
 	public const int maxT = 41;
 
 	const bool T = true;
@@ -445,7 +445,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 	void Factor(out TastierType type) {
 		int n; Symbol sym; string name; 
 		type = TastierType.Undefined; 
-		if (la.kind == 1) {
+		if (la.kind == 2) {
 			Ident(out name);
 			bool isExternal = false; //CS3071 students can ignore external declarations, since they only deal with compilation of single files.
 			sym = lookup(openScopes, name);
@@ -474,7 +474,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			 } else SemErr("variable expected");
 			}
 			
-		} else if (la.kind == 2) {
+		} else if (la.kind == 1) {
 			Get();
 			n = Convert.ToInt32(t.val);
 			program.Add(new Instruction("", "Const " + n));
@@ -501,7 +501,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 	}
 
 	void Ident(out string name) {
-		Expect(1);
+		Expect(2);
 		name = t.val;
 		/*   
 		// WILL COME BACK - at present people can misuse the dot. eg: making an int a.b when there is no struct a. 
@@ -570,8 +570,6 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		
 		while (StartOf(2)) {
 			if (la.kind == 36 || la.kind == 37) {
-				ArrayDecl(external);
-			} else if (la.kind == 36 || la.kind == 37) {
 				VarDecl(external);
 			} else if (la.kind == 20) {
 				StructDecl(external);
@@ -603,99 +601,6 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		
 	}
 
-	void ArrayDecl(bool external) {
-		int n; int total =1; Queue<int> numElementsQueue = new Queue<int>(); string indexname; int dimensions; string name; TastierType type; Scope currentScope = openScopes.Peek();
-		
-		Type(out type);
-		Ident(out name);
-		Expect(23);
-		dimensions = 1;
-		
-		Expect(2);
-		n = Convert.ToInt32(t.val) ;
-		total = total * (n+1);
-		numElementsQueue.Enqueue(n);
-		// Console.WriteLine("number of elements = "+n+".");
-		string symbolname;
-		for(int i=0; i<n; i++){
-		//                                           symbolname = name+"["+i.ToString()+"]";
-		//                                          Console.WriteLine("symbolname = "+symbolname+".");
-		
-		}
-		
-		Expect(24);
-		while (la.kind == 23) {
-			Get();
-			Expect(2);
-			dimensions = dimensions+1;
-			n = Convert.ToInt32(t.val);
-			total = total * (n+1);   //total is the number of elements we will generate.
-			numElementsQueue.Enqueue(n);
-			
-			
-			Expect(24);
-		}
-		Expect(21);
-		string typestring = "undefined";
-		if(type == TastierType.Integer){
-		  typestring = "int";
-		}else if(type == TastierType.Boolean){
-		  typestring = "bool";
-		}
-		//string will go here.
-		
-		
-		/*does array exist already?*/
-		    //We are keeping a list of arrays declared in the program.
-		    foreach(ArraySymbol AS in declaredArrays){
-		       if(AS.Item1 == name && AS.Item2 == typestring && AS.Item3 == dimensions){
-		          SemErr("ERROR - Array '"+name+"' already defined");
-		       }
-		    }
-		declaredArrays.Add(new ArraySymbol(name, typestring, dimensions));
-		Console.WriteLine("Array '"+name+"' declared. Type = '"+typestring+"' Number of dimensions = "+dimensions+".");
-		//           Console.WriteLine("   <to be done>");
-		
-		
-		/*Algorithim to generate all array members*/
-		Dictionary<int, string> Dict = new Dictionary<int, string>();
-		for (int i =0; i< total; i++){
-		   Dict.Add(i, name);
-		}     
-		int beforeincrement = total;
-		for(int i =0; i< dimensions; i++){
-		     
-		     int mynum = numElementsQueue.Dequeue();
-		      beforeincrement = (beforeincrement / (mynum+1));
-		     int writevalue = 0;
-		     int count =0;
-		     Console.WriteLine(">   beforeincrement = "+beforeincrement+", mynum = "+mynum+"");
-		    // Dict[0] =  Dict[0] + "["+writevalue+"]";
-		
-		     for(int j =0; j< total; j++){
-		        if(count == beforeincrement){
-		           writevalue++;
-		           writevalue = writevalue % (mynum+1);
-		           count = 0;
-		        } 
-		        count++;
-		
-		        Dict[j] =  Dict[j] + "["+writevalue+"]";
-		
-		     }
-		}
-		for(int i =0; i< total; i++){
-		  /*make a new symbol*/
-		Symbol mySym = new Symbol(Dict[i], (int)TastierKind.Var, (int)type, openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
-		Console.WriteLine("     Variable "+ mySym.Item1+" declared. = (kind = "+mySym.Item2+ ", type = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+"),");
-		 currentScope.Push(mySym);
-		 // Console.WriteLine("    "+Dict[i]);
-		}
-		Console.WriteLine(")");
-		
-		
-	}
-
 	void VarDecl(bool external) {
 		int dimensions; string name; TastierType type; Scope currentScope = openScopes.Peek();
 		
@@ -717,11 +622,95 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		
 		}
 		
-		Expect(21);
+		if (la.kind == 21) {
+			Get();
+		} else if (la.kind == 23) {
+			int n; int total =1; Queue<int> numElementsQueue = new Queue<int>();
+			string indexname;  
+			
+			Get();
+			dimensions = 1; 
+			Expect(1);
+			n = Convert.ToInt32(t.val) ;
+			total = total * (n+1);
+			numElementsQueue.Enqueue(n);
+			
+			Expect(24);
+			while (la.kind == 23) {
+				Get();
+				Expect(1);
+				dimensions = dimensions+1;
+				n = Convert.ToInt32(t.val);
+				total = total * (n+1);   //total is the number of elements we will generate.
+				numElementsQueue.Enqueue(n);
+				
+				Expect(24);
+			}
+			Expect(21);
+			string typestring = "undefined";
+			if(type == TastierType.Integer){
+			 typestring = "int";
+			}else if(type == TastierType.Boolean){
+			 typestring = "bool";
+			}
+			//string will go here.
+			
+			
+			/*does array exist already?*/
+			   //We are keeping a list of arrays declared in the program.
+			
+			  foreach(ArraySymbol AS in declaredArrays){
+			      if(AS.Item1 == name && AS.Item2 == typestring && AS.Item3 == dimensions){
+			         SemErr("ERROR - Array '"+name+"' already defined");
+			      }
+			   }
+			declaredArrays.Add(new ArraySymbol(name, typestring, dimensions));
+			Console.WriteLine("Array '"+name+"' declared. Type = '"+typestring+"' Number of dimensions = "+dimensions+".");
+			
+			
+			
+			
+			
+			/*Algorithim to generate all array members*/
+			Dictionary<int, string> Dict = new Dictionary<int, string>();
+			for (int i =0; i< total; i++){
+			  Dict.Add(i, name);
+			}     
+			int beforeincrement = total;
+			for(int i =0; i< dimensions; i++){
+			    
+			    int mynum = numElementsQueue.Dequeue();
+			     beforeincrement = (beforeincrement / (mynum+1));
+			    int writevalue = 0;
+			    int count =0;
+			    Console.WriteLine(">   beforeincrement = "+beforeincrement+", mynum = "+mynum+"");
+			   // Dict[0] =  Dict[0] + "["+writevalue+"]";
+			
+			    for(int j =0; j< total; j++){
+			       if(count == beforeincrement){
+			          writevalue++;
+			          writevalue = writevalue % (mynum+1);
+			          count = 0;
+			       } 
+			       count++;
+			
+			       Dict[j] =  Dict[j] + "["+writevalue+"]";
+			
+			    }
+			}
+			for(int i =0; i< total; i++){
+			 /*make a new symbol*/
+			Symbol mySym = new Symbol(Dict[i], (int)TastierKind.Var, (int)type, openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
+			Console.WriteLine("     Variable "+ mySym.Item1+" declared. = (kind = "+mySym.Item2+ ", type = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+"),");
+			currentScope.Push(mySym);
+			}
+			Console.WriteLine(")");
+			
+		} else SynErr(46);
 	}
 
 	void StructDecl(bool external) {
-		string structname; int dimensions = 0; Scope currentScope = openScopes.Peek(); string instancename; TastierKind kind = TastierKind.Var;  bool structnameUnique = true;  string membername; TastierType type;
+		string structname2; int n; int total =1; Queue<int> numElementsQueue = new Queue<int>();  string structname; int dimensions = 0; Scope currentScope = openScopes.Peek(); string instancename; TastierKind kind = TastierKind.Var;  bool structnameUnique = true;  string membername; TastierType type = TastierType.Undefined;
 		
 		Expect(20);
 		Ident(out structname);
@@ -746,7 +735,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 				
 				
 				Expect(21);
-			} else SynErr(46);
+			} else SynErr(47);
 			while (la.kind == 20 || la.kind == 36 || la.kind == 37) {
 				if (la.kind == 20) {
 					InternalStruct(structname);
@@ -766,7 +755,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			}
 			Console.WriteLine( ")" );
 			
-		} else if (la.kind == 1) {
+		} else if (la.kind == 2) {
 			Ident(out instancename);
 			if (la.kind == 21) {
 				Get();
@@ -790,40 +779,91 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 				
 			} else if (la.kind == 23) {
 				Get();
-				Expect(2);
-				Expect(24);
+				dimensions = 1; 
+				Expect(1);
 				if(definedStructs.ContainsKey(structname) == false){
 				  SemErr("ERROR - struct '"+structname+"' has not been defined.");
 				}
-				 dimensions = dimensions+1;
 				
+				n = Convert.ToInt32(t.val) ;
+				total = total * (n+1);  //total is the total number of elements we will generate    
+				numElementsQueue.Enqueue(n);
+				
+				Expect(24);
 				while (la.kind == 23) {
 					Get();
-					Expect(2);
+					Expect(1);
 					Expect(24);
 					dimensions = dimensions+1;
+					n = Convert.ToInt32(t.val);
+					total = total * (n+1);   //total is the number of elements we will generate.
+					numElementsQueue.Enqueue(n);
+					
 				}
 				Expect(21);
+				string structstring = "struct_"+structname;
+				//We are keeping a list of arrays declared in the program.
 				foreach(ArraySymbol AS in declaredArrays){
-				  if(AS.Item1 == instancename && AS.Item2 == structname && AS.Item3 == dimensions){
+				  if(AS.Item1 == instancename && AS.Item2 == structstring && AS.Item3 == dimensions){
 				     SemErr("ERROR - Array already defined");
 				  }
 				}
-				ArraySymbol newAS = new ArraySymbol(instancename, "struct_"+ structname, dimensions);
+				ArraySymbol newAS = new ArraySymbol(instancename, structstring, dimensions);
 				declaredArrays.Add(newAS);
-				Console.WriteLine("Array '"+instancename+"' declared. Type = '"+newAS.Item2+"' Number of dimensions = "+dimensions+". Members(");
-				Console.WriteLine("   <to be done>");
+				Console.WriteLine("Struct Array '"+instancename+"' declared. Type = '"+newAS.Item2+"' Number of dimensions = "+dimensions+". Members(");
+				
+				
+				
+				/*Algorithim to generate all array members*/
+				Dictionary<int, string> Dict = new Dictionary<int, string>();
+				for (int i =0; i< total; i++){
+				Dict.Add(i, instancename);
+				}     
+				int beforeincrement = total;
+				for(int i =0; i< dimensions; i++){
+				
+				int mynum = numElementsQueue.Dequeue();
+				 beforeincrement = (beforeincrement / (mynum+1));
+				int writevalue = 0;
+				int count =0;
+				Console.WriteLine(">   beforeincrement = "+beforeincrement+", mynum = "+mynum+"");
+				// Dict[0] =  Dict[0] + "["+writevalue+"]";
+				
+				for(int j =0; j< total; j++){
+				   if(count == beforeincrement){
+				      writevalue++;
+				      writevalue = writevalue % (mynum+1);
+				      count = 0;
+				   } 
+				   count++;
+				
+				   Dict[j] =  Dict[j] + "["+writevalue+"]";
+				
+				}
+				}
+				// TastierType type = TastierType.Undefined;
+				for(int i =0; i< total; i++){
+				/*make a new symbol*/
+				foreach (KeyValuePair<string, StructMember> kvp in definedStructs[structname]){
+				  Symbol mySym = new Symbol(Dict[i]+"."+kvp.Key, (int)TastierKind.Var, kvp.Value.Item1, openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
+				   Console.WriteLine("     Variable '"+ mySym.Item1+"' declared. = (kind = "+mySym.Item2+ ", type = "+mySym.Item3+", sframe = "+mySym.Item4+", offset = "+mySym.Item5+"),");
+				    currentScope.Push(mySym);
+				}
+				// Console.WriteLine("    "+Dict[i]);
+				}
 				Console.WriteLine(")");
 				
 				
-			} else SynErr(47);
-		} else SynErr(48);
+				
+				
+			} else SynErr(48);
+		} else SynErr(49);
 	}
 
 	void Stat() {
-		TastierType type; TastierType typeA; TastierType typeB;  string name; Symbol sym; bool external = false; bool isExternal = false; 
+		string newname; TastierType type; TastierType typeA; TastierType typeB;  string name; Symbol sym; bool external = false; bool isExternal = false; 
 		switch (la.kind) {
-		case 1: {
+		case 2: {
 			Ident(out name);
 			sym = lookup(openScopes, name);
 			if (sym == null) {
@@ -920,7 +960,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 					program.Add(new Instruction(endlabel, "Nop"));
 					
 					
-				} else SynErr(49);
+				} else SynErr(50);
 			} else if (la.kind == 10) {
 				Get();
 				Expect(11);
@@ -934,7 +974,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 				string procedureLabel = getLabelForProcedureName(lexicalLevelDifference, sym.Item1);
 				program.Add(new Instruction("", "Call " + lexicalLevelDifference + " " + procedureLabel));
 				
-			} else SynErr(50);
+			} else SynErr(51);
 			break;
 		}
 		case 28: {
@@ -1077,18 +1117,16 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			while (StartOf(4)) {
 				if (StartOf(3)) {
 					Stat();
-				} else if (la.kind == 36 || la.kind == 37) {
-					ArrayDecl(external);
-				} else if (la.kind == 36 || la.kind == 37) {
-					VarDecl(external);
-				} else {
+				} else if (la.kind == 20) {
 					StructDecl(external);
+				} else {
+					VarDecl(external);
 				}
 			}
 			Expect(13);
 			break;
 		}
-		default: SynErr(51); break;
+		default: SynErr(52); break;
 		}
 	}
 
@@ -1147,11 +1185,11 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		} else if (la.kind == 37) {
 			Get();
 			type = TastierType.Boolean; 
-		} else SynErr(52);
+		} else SynErr(53);
 	}
 
 	void SimpleAssignment() {
-		TastierType type; string name; Symbol sym; bool external = false;  bool isExternal = false; 
+		string newname; TastierType type; string name; Symbol sym; bool external = false;  bool isExternal = false; 
 		Ident(out name);
 		sym = lookup(openScopes, name);
 		if (sym == null) {
@@ -1200,7 +1238,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			program.Add(new Instruction("", "Call " + lexicalLevelDifference + " " + procedureLabel));
 			
 			
-		} else SynErr(53);
+		} else SynErr(54);
 	}
 
 	void Tastier() {
@@ -1223,8 +1261,6 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		while (StartOf(5)) {
 			if (la.kind == 20) {
 				StructDecl(external);
-			} else if (la.kind == 36 || la.kind == 37) {
-				ArrayDecl(external);
 			} else if (la.kind == 36 || la.kind == 37) {
 				VarDecl(external);
 			} else if (la.kind == 9) {
@@ -1374,7 +1410,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			Ident(out name);
 			Expect(21);
 			externalDeclarations.Push(new Symbol(name, (int)TastierKind.Proc, (int)TastierType.Undefined, 1, -1)); 
-		} else SynErr(54);
+		} else SynErr(55);
 	}
 
 	void ConstDecl(bool external) {
@@ -1461,9 +1497,9 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 	static readonly bool[,] set = {
 		{T,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x},
 		{x,x,x,x, x,x,x,x, x,x,x,x, x,x,T,T, T,T,T,T, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x},
-		{x,T,x,x, x,x,x,x, x,T,x,x, T,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, T,x,T,T, T,T,x,x, T,T,x,x, x,x,x},
-		{x,T,x,x, x,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, T,x,T,T, T,T,x,x, x,x,x,x, x,x,x},
-		{x,T,x,x, x,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, T,x,T,T, T,T,x,x, T,T,x,x, x,x,x},
+		{x,x,T,x, x,x,x,x, x,T,x,x, T,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, T,x,T,T, T,T,x,x, T,T,x,x, x,x,x},
+		{x,x,T,x, x,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, T,x,T,T, T,T,x,x, x,x,x,x, x,x,x},
+		{x,x,T,x, x,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, T,x,T,T, T,T,x,x, T,T,x,x, x,x,x},
 		{x,x,x,x, x,x,x,x, x,T,x,x, x,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, T,T,T,T, x,x,x}
 
 	};
@@ -1479,8 +1515,8 @@ public class Errors {
 		string s;
 		switch (n) {
 			case 0: s = "EOF expected"; break;
-			case 1: s = "ident expected"; break;
-			case 2: s = "number expected"; break;
+			case 1: s = "number expected"; break;
+			case 2: s = "ident expected"; break;
 			case 3: s = "\"+\" expected"; break;
 			case 4: s = "\"-\" expected"; break;
 			case 5: s = "\"true\" expected"; break;
@@ -1524,15 +1560,16 @@ public class Errors {
 			case 43: s = "invalid RelOp"; break;
 			case 44: s = "invalid Factor"; break;
 			case 45: s = "invalid MulOp"; break;
-			case 46: s = "invalid StructDecl"; break;
+			case 46: s = "invalid VarDecl"; break;
 			case 47: s = "invalid StructDecl"; break;
 			case 48: s = "invalid StructDecl"; break;
-			case 49: s = "invalid Stat"; break;
+			case 49: s = "invalid StructDecl"; break;
 			case 50: s = "invalid Stat"; break;
 			case 51: s = "invalid Stat"; break;
-			case 52: s = "invalid Type"; break;
-			case 53: s = "invalid SimpleAssignment"; break;
-			case 54: s = "invalid ExternDecl"; break;
+			case 52: s = "invalid Stat"; break;
+			case 53: s = "invalid Type"; break;
+			case 54: s = "invalid SimpleAssignment"; break;
+			case 55: s = "invalid ExternDecl"; break;
 
 			default: s = "error " + n; break;
 		}

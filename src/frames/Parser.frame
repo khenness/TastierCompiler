@@ -34,6 +34,9 @@ using Symbol = System.Tuple<string, int, int, int, int>;
 using Instruction = System.Tuple<string,string>;
 using StackAddress = System.Tuple<int, int>;
 using StructMember = System.Tuple<int, int>; /*type, kind*/
+using ArraySymbol = System.Tuple<string, string, int>; /*name, type (as a string - for structs the structname, 
+                                                           else int or bool), dimensions*/
+
 
 -->namespace
 
@@ -80,6 +83,7 @@ public class Parser {
         output.Add(i.Item2);
       }
     }
+    output.Add("TEST");
     File.WriteAllLines(filename, output.ToArray());
   }
 

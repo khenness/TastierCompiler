@@ -10,6 +10,7 @@ class Tastier { // DMA
       Parser parser = new Parser(scanner);
       parser.Parse();
       if (parser.errors.count == 0) {
+
         parser.Write(arg[1]);
       }
     } else Console.WriteLine("Usage: tcc <program.TAS> <output.asm>");

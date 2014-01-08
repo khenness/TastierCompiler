@@ -1,12 +1,15 @@
 
 program Test {
+  
+// struct bad{};
+// int x :=99;
   struct date{
    int day;
    int month;
    int year;
    bool publicholiday;
+  // struct date recursivedate;
   };
-
   struct person{
    int favouritenumber;
    struct date birthday;
@@ -15,16 +18,26 @@ program Test {
   struct vehicle{
    struct person owner;
    struct date registrationdate;
+   int numberofwheels;
   };
+ 
+  int myintarray[1][1][2];
+  
+  bool  myarray[4][2][2];
+  int myintarray[5];
 
   void Main() {
     struct person kevin;
     struct person eimear;
 
-    int y.e.c;
-    y.e.c :=66;
-    int x;
-    x:=99;
+//    int y.e.c;
+ //   y.e.c :=66;
+  //  int x;
+   // x:=99;
+  // int myint;
+  // myint := 3;
+   bool myboolarray[5];
+
     bool mybool;
     write x;
     kevin.birthday.day := 21;

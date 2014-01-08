@@ -1,0 +1,6 @@
+To run simple.TAS:
+=============================
+mono bin/tcc.exe test/Programs/simple.TAS test.asm
+tasm test.asm test.bc
+tvm test.bc test/Inputs/test.IN
+

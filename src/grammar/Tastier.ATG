@@ -270,6 +270,8 @@ letter = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".
 TOKENS
   number = digit {digit}.
   ident  = letter {letter | digit } {   ( '.' letter {letter | digit}  | '[' digit {digit} ']' )  }.
+ // structident  = letter {letter | digit } .
+
 
 COMMENTS FROM "/*" TO "*/" NESTED
 COMMENTS FROM "//" TO lf
@@ -515,75 +517,7 @@ StructDecl<bool external>       (.
 
 =  "struct"   Ident<out structname> ( 
 
-/*struct definition*/
-
- '{'  
-                                         (. //check its not already defined, give an error if it is.
-                                         // Can't have two "date" objects for example.
-                                          structnameUnique = true;
-                                          foreach (KeyValuePair<string, Dictionary<string, StructMember>> VarList in definedStructs){
-                                             if(VarList.Key == structname){
-                                               SemErr("ERROR - struct '"+structname+"' is already defined.");
-                                             }
-                                          }
-                                          definedStructs.Add(structname, new Dictionary<string,StructMember>());
-                                                
-                                        .)
-   //you must have at least one member in a struct
-( InternalStruct<structname> |  Type<out type> Ident<out membername> 
-                                          (.
-                                            kind = TastierKind.Var;                                          
-                                            definedStructs[structname].Add(membername, new StructMember((int)type, (int)kind));   
-                                         
-                                          .)
-
-';'
-)
-{
-(InternalStruct<structname> |  Type<out type> Ident<out membername>  
-                                            (.  
-                                              kind = TastierKind.Var;
-                                              definedStructs[structname].Add(membername, new StructMember((int)type, (int)kind));
-                                            .)
-';'
-)
-}
-
-"};"                              (.
-                                   /* Debugging info*/                                  
-                                    Console.WriteLine("Struct '"+structname+"' defined.  Attributes=(");
-                                    foreach (KeyValuePair<string, StructMember> kvp in definedStructs[structname]){
-                                       Console.WriteLine("    "+kvp.Key+", type = "+kvp.Value.Item1+", kind = "+kvp.Value.Item2+",");
-                                    }
-                                    Console.WriteLine( ")" );
-                                  .)
- |
-/*struct instantiation*/
-
-   Ident<out instancename>  ( ';' 
-                                 (.
-                                  if(definedStructs.ContainsKey(structname) == true){
-                                  Console.WriteLine("Struct '"+instancename+"' of type '"+structname+"' instantiated. (");
-                                     foreach(KeyValuePair<string, StructMember> kvp in definedStructs[structname]){
-                                        string symbolname = instancename + "." +kvp.Key;
-                                        Symbol mySym = new Symbol(symbolname, kvp.Value.Item2,kvp.Value.Item1, openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
-                                      //  Console.WriteLine("   Variable "+ mySym.Item1+" declared. ");
-                                          Console.WriteLine("   Variable "+ mySym.Item1+" declared. (kind = "+mySym.Item2+ ", type = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+")");
-                                       // Console.WriteLine("    (kind = "+mySym.Item2+ ", type = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+")");
-                                        currentScope.Push(mySym);
-
-                                     }
-                                     Console.WriteLine(")");
-                                  }else{
-                                      SemErr("ERROR - struct '"+structname+"' has not been defined.");
-                                  }
-
-
-                                 .) 
-
-
-/*declaring a struct array */
- |   '<' (. dimensions = 1; .)
+ '[' (. dimensions = 1; .)
  number
                                            (.
 
@@ -596,18 +530,21 @@ StructDecl<bool external>       (.
                                              total = total * (n+1);  //total is the total number of elements we will generate    
                                              numElementsQueue.Enqueue(n);
                                     .)
-'>'
+']'
 
 /*multidimensional*/
-{'<' number '>'                           (.  dimensions = dimensions+1;
+{'[' (. dimensions = dimensions+1;.) 
+number                           (.  
                                               n = Convert.ToInt32(t.val);
                                               total = total * (n+1);   //total is the number of elements we will generate.
                                               numElementsQueue.Enqueue(n);
                                           .)
 
+']' 
 
-
-}  ';'                                       (.  
+}
+   Ident<out instancename>  
+  ';'                                       (.  
                                               /*does array exist already?*/
                                               string structstring = "struct_"+structname;
                                               //We are keeping a list of arrays declared in the program.
@@ -666,8 +603,77 @@ StructDecl<bool external>       (.
                                          .)
   
 
-)
+| 
 
+/*struct instantiation*/
+
+   Ident<out instancename>   ';' 
+                                 (.
+                                  if(definedStructs.ContainsKey(structname) == true){
+                                  Console.WriteLine("Struct '"+instancename+"' of type '"+structname+"' instantiated. (");
+                                     foreach(KeyValuePair<string, StructMember> kvp in definedStructs[structname]){
+                                        string symbolname = instancename + "." +kvp.Key;
+                                        Symbol mySym = new Symbol(symbolname, kvp.Value.Item2,kvp.Value.Item1, openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
+                                      //  Console.WriteLine("   Variable "+ mySym.Item1+" declared. ");
+                                          Console.WriteLine("   Variable "+ mySym.Item1+" declared. (kind = "+mySym.Item2+ ", type = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+")");
+                                       // Console.WriteLine("    (kind = "+mySym.Item2+ ", type = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+")");
+                                        currentScope.Push(mySym);
+
+                                     }
+                                     Console.WriteLine(")");
+                                  }else{
+                                      SemErr("ERROR - struct '"+structname+"' has not been defined.");
+                                  }
+
+
+                                 .) 
+
+|
+
+/*struct definition*/
+
+ '{'  
+                                         (. //check its not already defined, give an error if it is.
+                                         // Can't have two "date" objects for example.
+                                          structnameUnique = true;
+                                          foreach (KeyValuePair<string, Dictionary<string, StructMember>> VarList in definedStructs){
+                                             if(VarList.Key == structname){
+                                               SemErr("ERROR - struct '"+structname+"' is already defined.");
+                                             }
+                                          }
+                                          definedStructs.Add(structname, new Dictionary<string,StructMember>());
+                                                
+                                        .)
+   //you must have at least one member in a struct
+( InternalStruct<structname> |  Type<out type> Ident<out membername> 
+                                          (.
+                                            kind = TastierKind.Var;                                          
+                                            definedStructs[structname].Add(membername, new StructMember((int)type, (int)kind));   
+                                         
+                                          .)
+
+';'
+)
+{
+(InternalStruct<structname> |  Type<out type> Ident<out membername>  
+                                            (.  
+                                              kind = TastierKind.Var;
+                                              definedStructs[structname].Add(membername, new StructMember((int)type, (int)kind));
+                                            .)
+';'
+)
+}
+
+"};"                              (.
+                                   /* Debugging info*/                                  
+                                    Console.WriteLine("Struct '"+structname+"' defined.  Attributes=(");
+                                    foreach (KeyValuePair<string, StructMember> kvp in definedStructs[structname]){
+                                       Console.WriteLine("    "+kvp.Key+", type = "+kvp.Value.Item1+", kind = "+kvp.Value.Item2+",");
+                                    }
+                                    Console.WriteLine( ")" );
+                                  .)
+
+ 
 ) 
 .
 
@@ -841,7 +847,7 @@ Stat                            (.  string newname; TastierType type; TastierTyp
                                     }
                                     if (sym.Item4 == 0) {
                                       if (isExternal) {
-                                        program.Add(new Instruction("", "StoG " + sym.Item1));
+                                      //  program.Add(new Instruction("", "StoG " + sym.Item1));
                                         // if the symbol is external, we also store it by name. The linker will resolve the $
                                       } else {
                                         program.Add(new Instruction("", "StoG " + (sym.Item5+3)));

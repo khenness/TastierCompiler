@@ -83,7 +83,6 @@ public class Parser {
         output.Add(i.Item2);
       }
     }
-    output.Add("TEST");
     File.WriteAllLines(filename, output.ToArray());
   }
 

@@ -19,18 +19,22 @@ program MyProgram {
    int numberofwheels;
   };
 
+ // void myfun(){
+
+ // }
+  
   void Main() {
-   //  struct date [4][3] da;
-   // a;
-   
      int [4][2] ia;
+     struct date [4][6] da;
 
-
+   // struct date{} 
+   // struct date mydate;
+  //  struct date [] mydate;
     struct person kevin;
     struct person eimear;
   
    // int ia[3][2];
-    ia[3][1] := 88;
+    ia[2][1] := 88;
     write ia[3][1];
     bool mybool;
     kevin.birthday.day := 21;
@@ -39,6 +43,7 @@ program MyProgram {
     write kevin.birthday.day;
     eimear.birthday.day := kevin.birthday.day -1;
     write eimear.birthday.day;
+  //  myfun();
   }
 }
 

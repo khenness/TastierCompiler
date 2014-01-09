@@ -1,5 +1,5 @@
 
-program Test {
+program MyProgram {
   
   struct date {
    int day;
@@ -20,15 +20,18 @@ program Test {
   };
 
   void Main() {
-     struct date da[4];
-     int ia[4];
+   //  struct date [4][3] da;
+   // a;
+   
+     int [4][2] ia;
 
 
     struct person kevin;
     struct person eimear;
-    da[3].day := 99;
-    ia[3] := 88;
-    write datearray[3].day;
+  
+   // int ia[3][2];
+    ia[3][1] := 88;
+    write ia[3][1];
     bool mybool;
     kevin.birthday.day := 21;
     write kevin.birthday.day;

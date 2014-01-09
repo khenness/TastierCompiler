@@ -265,7 +265,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 
   foreach (Scope scope in scopes) {
     foreach (Symbol s in scope) {
-      if (s.Item1 == name) {
+      if (s.Item1 == name ) {
         return s;
       }
       else {
@@ -569,7 +569,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		*/
 		
 		while (StartOf(2)) {
-			if (la.kind == 36 || la.kind == 37) {
+			if (la.kind == 34 || la.kind == 35) {
 				VarDecl(external);
 			} else if (la.kind == 20) {
 				StructDecl(external);
@@ -605,26 +605,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		int dimensions; string name; TastierType type; Scope currentScope = openScopes.Peek();
 		
 		Type(out type);
-		Ident(out name);
-		foreach(char c in name){
-		  if(c == '.'){
-		    SemErr("Cannot use the dot operator when declaring a variable.");
-		  }
-		}
-		if (external) {
-		 Symbol mySym = new Symbol(name, (int)TastierKind.Var, (int)type, 0, 0);
-		 externalDeclarations.Push(mySym);
-		 Console.WriteLine("Variable declared. (name = "+ mySym.Item1+",kind = "+mySym.Item2+ ", type = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+")");
-		} else {
-		Symbol mySym = new Symbol(name, (int)TastierKind.Var,(int)type, openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
-		currentScope.Push(mySym );
-		 Console.WriteLine("Variable declared. (name = "+ mySym.Item1+", kind = "+mySym.Item2+", type = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+")");
-		
-		}
-		
-		if (la.kind == 21) {
-			Get();
-		} else if (la.kind == 23) {
+		if (la.kind == 37) {
 			int n; int total =1; Queue<int> numElementsQueue = new Queue<int>();
 			string indexname;  
 			
@@ -635,8 +616,8 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			total = total * (n+1);
 			numElementsQueue.Enqueue(n);
 			
-			Expect(24);
-			while (la.kind == 23) {
+			Expect(38);
+			while (la.kind == 37) {
 				Get();
 				Expect(1);
 				dimensions = dimensions+1;
@@ -644,8 +625,9 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 				total = total * (n+1);   //total is the number of elements we will generate.
 				numElementsQueue.Enqueue(n);
 				
-				Expect(24);
+				Expect(38);
 			}
+			Ident(out name);
 			Expect(21);
 			string typestring = "undefined";
 			if(type == TastierType.Integer){
@@ -706,6 +688,31 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			}
 			Console.WriteLine(")");
 			
+		} else if (la.kind == 2) {
+			Ident(out name);
+			foreach(char c in name){
+			  if(c == '.'){
+			    SemErr("Cannot use the dot operator when declaring a variable.");
+			  }
+			}
+			foreach(char c in name){
+			  if(c == '[' | c == ']'){
+			    SemErr("Cannot use the '[' or ']' charactar  when declaring a variable.");
+			  }
+			}
+			
+			if (external) {
+			 Symbol mySym = new Symbol(name, (int)TastierKind.Var, (int)type, 0, 0);
+			 externalDeclarations.Push(mySym);
+			 Console.WriteLine("Variable declared. (name = "+ mySym.Item1+",kind = "+mySym.Item2+ ", type = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+")");
+			} else {
+			Symbol mySym = new Symbol(name, (int)TastierKind.Var,(int)type, openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
+			currentScope.Push(mySym );
+			 Console.WriteLine("Variable declared. (name = "+ mySym.Item1+", kind = "+mySym.Item2+", type = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+")");
+			
+			}
+			
+			Expect(21);
 		} else SynErr(46);
 	}
 
@@ -727,7 +734,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			
 			if (la.kind == 20) {
 				InternalStruct(structname);
-			} else if (la.kind == 36 || la.kind == 37) {
+			} else if (la.kind == 34 || la.kind == 35) {
 				Type(out type);
 				Ident(out membername);
 				kind = TastierKind.Var;                                          
@@ -736,7 +743,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 				
 				Expect(21);
 			} else SynErr(47);
-			while (la.kind == 20 || la.kind == 36 || la.kind == 37) {
+			while (la.kind == 20 || la.kind == 34 || la.kind == 35) {
 				if (la.kind == 20) {
 					InternalStruct(structname);
 				} else {
@@ -777,7 +784,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 				
 				
 				
-			} else if (la.kind == 23) {
+			} else if (la.kind == 15) {
 				Get();
 				dimensions = 1; 
 				Expect(1);
@@ -789,11 +796,11 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 				total = total * (n+1);  //total is the total number of elements we will generate    
 				numElementsQueue.Enqueue(n);
 				
-				Expect(24);
-				while (la.kind == 23) {
+				Expect(16);
+				while (la.kind == 15) {
 					Get();
 					Expect(1);
-					Expect(24);
+					Expect(16);
 					dimensions = dimensions+1;
 					n = Convert.ToInt32(t.val);
 					total = total * (n+1);   //total is the number of elements we will generate.
@@ -861,17 +868,10 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 	}
 
 	void Stat() {
-		string newname; TastierType type; TastierType typeA; TastierType typeB;  string name; Symbol sym; bool external = false; bool isExternal = false; 
+		string newname; TastierType type; TastierType typeA; TastierType typeB;  string name =""; Symbol sym; bool external = false; bool isExternal = false; 
 		switch (la.kind) {
 		case 2: {
 			Ident(out name);
-			while (la.kind == 23) {
-				Get();
-				Expect(1);
-				Expect(24);
-				int  n = Convert.ToInt32(t.val);
-				name = name + "["+n+"]"; 
-			}
 			sym = lookup(openScopes, name);
 			if (sym == null) {
 			 sym = _lookup(externalDeclarations, name);
@@ -881,7 +881,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			 SemErr("reference to undefined variable " + name);
 			}
 			
-			if (la.kind == 25) {
+			if (la.kind == 23) {
 				Get();
 				if ((TastierKind)sym.Item2 != TastierKind.Var) {
 				 SemErr("cannot assign to non-variable");
@@ -906,7 +906,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 					 program.Add(new Instruction("", "Sto " + lexicalLevelDifference + " " + sym.Item5));
 					}
 					
-				} else if (la.kind == 26) {
+				} else if (la.kind == 24) {
 					Get();
 					if ((TastierType)type != TastierType.Boolean) {
 					  SemErr("boolean type expected for conditional assignment");
@@ -920,7 +920,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 					
 					
 					Expr(out typeA);
-					Expect(27);
+					Expect(25);
 					if (typeA != (TastierType)sym.Item3) {
 					    SemErr("incompatible types");  //=
 					  }
@@ -984,7 +984,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			} else SynErr(51);
 			break;
 		}
-		case 28: {
+		case 26: {
 			Get();
 			Expect(10);
 			Expr(out type);
@@ -1006,14 +1006,14 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			program.Add(new Instruction("", "Jmp " + openLabels.Peek()));
 			program.Add(startOfElse);
 			
-			if (la.kind == 29) {
+			if (la.kind == 27) {
 				Get();
 				Stat();
 			}
 			program.Add(new Instruction(openLabels.Pop(), "Nop")); 
 			break;
 		}
-		case 30: {
+		case 28: {
 			Get();
 			string loopStartLabel = generateLabel();
 			openLabels.Push(generateLabel()); //second label is for the loop end
@@ -1033,7 +1033,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			
 			break;
 		}
-		case 31: {
+		case 29: {
 			Get();
 			Expect(10);
 			SimpleAssignment();
@@ -1062,7 +1062,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			
 			break;
 		}
-		case 32: {
+		case 30: {
 			Get();
 			Ident(out name);
 			Expect(21);
@@ -1099,7 +1099,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			
 			break;
 		}
-		case 33: {
+		case 31: {
 			Get();
 			Expr(out type);
 			if (type != TastierType.Integer) {
@@ -1107,7 +1107,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			}
 			program.Add(new Instruction("", "Write"));
 			
-			while (la.kind == 34) {
+			while (la.kind == 32) {
 				Get();
 				Expr(out type);
 				if (type != TastierType.Integer) {
@@ -1186,10 +1186,10 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 
 	void Type(out TastierType type) {
 		type = TastierType.Undefined; 
-		if (la.kind == 36) {
+		if (la.kind == 34) {
 			Get();
 			type = TastierType.Integer; 
-		} else if (la.kind == 37) {
+		} else if (la.kind == 35) {
 			Get();
 			type = TastierType.Boolean; 
 		} else SynErr(53);
@@ -1207,7 +1207,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		 SemErr("reference to undefined variable " + name);
 		}
 		
-		if (la.kind == 25) {
+		if (la.kind == 23) {
 			Get();
 			if ((TastierKind)sym.Item2 != TastierKind.Var) {
 			 SemErr("cannot assign to non-variable");
@@ -1250,7 +1250,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 
 	void Tastier() {
 		string name; bool external = false; 
-		Expect(35);
+		Expect(33);
 		Ident(out name);
 		Console.WriteLine("");
 		Console.WriteLine("");
@@ -1268,7 +1268,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		while (StartOf(5)) {
 			if (la.kind == 20) {
 				StructDecl(external);
-			} else if (la.kind == 36 || la.kind == 37) {
+			} else if (la.kind == 34 || la.kind == 35) {
 				VarDecl(external);
 			} else if (la.kind == 9) {
 				ProcDecl();
@@ -1410,7 +1410,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 	void ExternDecl() {
 		string name; bool external = true; Scope currentScope = openScopes.Peek(); int count = currentScope.Count; 
 		Expect(39);
-		if (la.kind == 36 || la.kind == 37) {
+		if (la.kind == 34 || la.kind == 35) {
 			VarDecl(external);
 		} else if (la.kind == 40) {
 			Get();
@@ -1423,7 +1423,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 	void ConstDecl(bool external) {
 		string name; TastierType type; Scope currentScope = openScopes.Peek(); Symbol sym; 
 		
-		Expect(38);
+		Expect(36);
 		Type(out type);
 		Ident(out name);
 		sym = lookup(openScopes, name);
@@ -1433,7 +1433,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		
 		//  }
 		
-		Expect(25);
+		Expect(23);
 		if ((TastierKind)sym.Item2 != TastierKind.Const) {
 		 SemErr("cannot assign to non-variable");
 		}
@@ -1455,7 +1455,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		 program.Add(new Instruction("", "Sto " + lexicalLevelDifference + " " + sym.Item5));
 		}
 		
-		while (la.kind == 34) {
+		while (la.kind == 32) {
 			Get();
 			Type(out type);
 			Ident(out name);
@@ -1464,7 +1464,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			
 			
 			
-			Expect(25);
+			Expect(23);
 			if ((TastierKind)sym.Item2 != TastierKind.Const) {
 			 SemErr("cannot assign to non-variable");
 			}
@@ -1504,10 +1504,10 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 	static readonly bool[,] set = {
 		{T,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x},
 		{x,x,x,x, x,x,x,x, x,x,x,x, x,x,T,T, T,T,T,T, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x},
-		{x,x,T,x, x,x,x,x, x,T,x,x, T,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, T,x,T,T, T,T,x,x, T,T,x,x, x,x,x},
-		{x,x,T,x, x,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, T,x,T,T, T,T,x,x, x,x,x,x, x,x,x},
-		{x,x,T,x, x,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, T,x,T,T, T,T,x,x, T,T,x,x, x,x,x},
-		{x,x,x,x, x,x,x,x, x,T,x,x, x,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, T,T,T,T, x,x,x}
+		{x,x,T,x, x,x,x,x, x,T,x,x, T,x,x,x, x,x,x,x, T,x,x,x, x,x,T,x, T,T,T,T, x,x,T,T, x,x,x,x, x,x,x},
+		{x,x,T,x, x,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, x,x,x,x, x,x,T,x, T,T,T,T, x,x,x,x, x,x,x,x, x,x,x},
+		{x,x,T,x, x,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, T,x,x,x, x,x,T,x, T,T,T,T, x,x,T,T, x,x,x,x, x,x,x},
+		{x,x,x,x, x,x,x,x, x,T,x,x, x,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, x,x,x,x, x,x,T,T, T,x,x,T, x,x,x}
 
 	};
 } // end Parser
@@ -1544,22 +1544,22 @@ public class Errors {
 			case 20: s = "\"struct\" expected"; break;
 			case 21: s = "\";\" expected"; break;
 			case 22: s = "\"};\" expected"; break;
-			case 23: s = "\"[\" expected"; break;
-			case 24: s = "\"]\" expected"; break;
-			case 25: s = "\":=\" expected"; break;
-			case 26: s = "\"?\" expected"; break;
-			case 27: s = "\":\" expected"; break;
-			case 28: s = "\"if\" expected"; break;
-			case 29: s = "\"else\" expected"; break;
-			case 30: s = "\"while\" expected"; break;
-			case 31: s = "\"for\" expected"; break;
-			case 32: s = "\"read\" expected"; break;
-			case 33: s = "\"write\" expected"; break;
-			case 34: s = "\",\" expected"; break;
-			case 35: s = "\"program\" expected"; break;
-			case 36: s = "\"int\" expected"; break;
-			case 37: s = "\"bool\" expected"; break;
-			case 38: s = "\"const\" expected"; break;
+			case 23: s = "\":=\" expected"; break;
+			case 24: s = "\"?\" expected"; break;
+			case 25: s = "\":\" expected"; break;
+			case 26: s = "\"if\" expected"; break;
+			case 27: s = "\"else\" expected"; break;
+			case 28: s = "\"while\" expected"; break;
+			case 29: s = "\"for\" expected"; break;
+			case 30: s = "\"read\" expected"; break;
+			case 31: s = "\"write\" expected"; break;
+			case 32: s = "\",\" expected"; break;
+			case 33: s = "\"program\" expected"; break;
+			case 34: s = "\"int\" expected"; break;
+			case 35: s = "\"bool\" expected"; break;
+			case 36: s = "\"const\" expected"; break;
+			case 37: s = "\"[\" expected"; break;
+			case 38: s = "\"]\" expected"; break;
 			case 39: s = "\"external\" expected"; break;
 			case 40: s = "\"procedure\" expected"; break;
 			case 41: s = "??? expected"; break;

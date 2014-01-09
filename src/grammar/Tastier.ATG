@@ -236,7 +236,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 
   foreach (Scope scope in scopes) {
     foreach (Symbol s in scope) {
-      if (s.Item1 == name) {
+      if (s.Item1 == name ) {
         return s;
       }
       else {
@@ -269,7 +269,7 @@ letter = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".
 
 TOKENS
   number = digit {digit}.
-  ident  = letter {letter | digit } { ( '.' letter {letter | digit} | '[' digit {digit} ']')  }.
+  ident  = letter {letter | digit } {   ( '.' letter {letter | digit}  | '[' digit {digit} ']' )  }.
 
 COMMENTS FROM "/*" TO "*/" NESTED
 COMMENTS FROM "//" TO lf
@@ -583,7 +583,7 @@ StructDecl<bool external>       (.
 
 
 /*declaring a struct array */
- |   '[' (. dimensions = 1; .)
+ |   '<' (. dimensions = 1; .)
  number
                                            (.
 
@@ -596,10 +596,10 @@ StructDecl<bool external>       (.
                                              total = total * (n+1);  //total is the total number of elements we will generate    
                                              numElementsQueue.Enqueue(n);
                                     .)
-']'
+'>'
 
 /*multidimensional*/
-{'[' number ']'                           (.  dimensions = dimensions+1;
+{'<' number '>'                           (.  dimensions = dimensions+1;
                                               n = Convert.ToInt32(t.val);
                                               total = total * (n+1);   //total is the number of elements we will generate.
                                               numElementsQueue.Enqueue(n);
@@ -738,15 +738,21 @@ SimpleAssignment                (.  string newname; TastierType type; string nam
 
 
 
-Stat                            (.  string newname; TastierType type; TastierType typeA; TastierType typeB;  string name; Symbol sym; bool external = false; bool isExternal = false; .)
+Stat                            (.  string newname; TastierType type; TastierType typeA; TastierType typeB;  string name =""; Symbol sym; bool external = false; bool isExternal = false; .)
 
 = Ident<out name>
-{
+
+/*(
  '[' number ']'                        (.
                                         int  n = Convert.ToInt32(t.val);
-                                        name = name + "["+n+"]"; .)
-/* |  '.' Ident<out newname> (. name = name+"."+newname;  .) ) */
-}
+                                        name = name + "["+n.ToString()+"]"; .)
+
+{
+ '[' number ']'                        (.
+                                          n = Convert.ToInt32(t.val);
+                                        name = name + "["+n.ToString()+"]"; .)
+
+}   | )*/ 
 
                (.
                                     sym = lookup(openScopes, name);
@@ -1239,44 +1245,9 @@ ConstDecl<bool external>        (.
 VarDecl<bool external>          (.
                                     int dimensions; string name; TastierType type; Scope currentScope = openScopes.Peek();
                                 .)
-= Type<out type>
-  Ident<out name>               (.
-                                    foreach(char c in name){
-                                       if(c == '.'){
-                                         SemErr("Cannot use the dot operator when declaring a variable.");
-                                       }
-                                    }
-                                    if (external) {
-                                      Symbol mySym = new Symbol(name, (int)TastierKind.Var, (int)type, 0, 0);
-                                      externalDeclarations.Push(mySym);
-                                      Console.WriteLine("Variable declared. (name = "+ mySym.Item1+",kind = "+mySym.Item2+ ", type = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+")");
-                                    } else {
-                                     Symbol mySym = new Symbol(name, (int)TastierKind.Var,(int)type, openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
-                                     currentScope.Push(mySym );
-                                      Console.WriteLine("Variable declared. (name = "+ mySym.Item1+", kind = "+mySym.Item2+", type = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+")");
-
-                                    }
-                                .)
-/*  { ',' Ident<out name>         (.
-                                    foreach(char c in name){
-                                       if(c == '.'){
-                                         SemErr("Cannot use the dot operator when declaring a variable.");
-                                       }
-                                    }
-
-                                    if (external) {
-                                      Symbol mySym = new Symbol(name, (int)TastierKind.Var, (int)type, 0, 0);
-                                      externalDeclarations.Push(mySym);
-                                      Console.WriteLine("Variable declared. (name = "+ mySym.Item1+", kind = "+mySym.Item2+ ", type = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+")");
-                                    } else {
-                                     Symbol mySym = new Symbol(name, (int)TastierKind.Var,(int)type,openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
-                                     currentScope.Push(mySym );
-                                      Console.WriteLine("Variable declared. (name = "+ mySym.Item1+", kind = "+mySym.Item2+ ", type = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+")");
-                                    }
-                                .)
-  } */ (';'  | 
-/*array declaration*/
-                                (.
+=  Type<out type>  (  
+/*array declaration code*/
+(.
                                  int n; int total =1; Queue<int> numElementsQueue = new Queue<int>();
                                  string indexname;  
                                .)
@@ -1297,7 +1268,10 @@ VarDecl<bool external>          (.
                                          total = total * (n+1);   //total is the number of elements we will generate.
                                          numElementsQueue.Enqueue(n);
                                          .)
-']' } ';'                                (.
+']' } 
+  Ident<out name> 
+
+';'                                (.
                                           string typestring = "undefined";
                                          if(type == TastierType.Integer){
                                             typestring = "int";
@@ -1358,7 +1332,54 @@ VarDecl<bool external>          (.
                                          Console.WriteLine(")");
                                       .)
 
-)
+ | 
+
+
+  Ident<out name>               (.
+                                    foreach(char c in name){
+                                       if(c == '.'){
+                                         SemErr("Cannot use the dot operator when declaring a variable.");
+                                       }
+                                    }
+                                    foreach(char c in name){
+                                       if(c == '[' | c == ']'){
+                                         SemErr("Cannot use the '[' or ']' charactar  when declaring a variable.");
+                                       }
+                                    }
+
+                                    if (external) {
+                                      Symbol mySym = new Symbol(name, (int)TastierKind.Var, (int)type, 0, 0);
+                                      externalDeclarations.Push(mySym);
+                                      Console.WriteLine("Variable declared. (name = "+ mySym.Item1+",kind = "+mySym.Item2+ ", type = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+")");
+                                    } else {
+                                     Symbol mySym = new Symbol(name, (int)TastierKind.Var,(int)type, openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
+                                     currentScope.Push(mySym );
+                                      Console.WriteLine("Variable declared. (name = "+ mySym.Item1+", kind = "+mySym.Item2+", type = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+")");
+
+                                    }
+                                .)
+/*  { ',' Ident<out name>         (.
+                                    foreach(char c in name){
+                                       if(c == '.'){
+                                         SemErr("Cannot use the dot operator when declaring a variable.");
+                                       }
+                                    }
+
+                                    if (external) {
+                                      Symbol mySym = new Symbol(name, (int)TastierKind.Var, (int)type, 0, 0);
+                                      externalDeclarations.Push(mySym);
+                                      Console.WriteLine("Variable declared. (name = "+ mySym.Item1+", kind = "+mySym.Item2+ ", type = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+")");
+                                    } else {
+                                     Symbol mySym = new Symbol(name, (int)TastierKind.Var,(int)type,openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
+                                     currentScope.Push(mySym );
+                                      Console.WriteLine("Variable declared. (name = "+ mySym.Item1+", kind = "+mySym.Item2+ ", type = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+")");
+                                    }
+                                .)
+  }*/ 
+
+   ';' 
+ )
+ 
 .
 
 
@@ -1371,4 +1392,5 @@ ExternDecl                      (.  string name; bool external = true; Scope cur
   ) .
 
 END Tastier.
+
 

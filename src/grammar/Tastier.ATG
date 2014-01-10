@@ -122,6 +122,9 @@ List<ArraySymbol> declaredArrays = new List<ArraySymbol>();
 /*storing extra info about functions*/
 List<FuncSymbol> declaredFuncs = new List<FuncSymbol>();
 
+/*passing in parameters*/
+Stack<Instruction> PassIn = new Stack<Instruction>();
+
 Stack<Scope> openScopes = new Stack<Scope>();
 Scope externalDeclarations = new Scope();
 
@@ -432,7 +435,12 @@ MulOp<out Instruction inst>
 
 /*------------------------------------------------------------------------*/
 
-ProcDecl                        (. int parameters=0; string returntypestring="";  string name1; TastierType returntype = TastierType.Undefined; string name; string label; Scope currentScope = openScopes.Peek(); int enterInstLocation = 0; bool external = false; .)
+ProcDecl                        (. Symbol mySym; int parameters=0; string returntypestring="";  string name1; 
+                                   TastierType returntype = TastierType.Undefined; string name; string label;
+                                   Scope currentScope = openScopes.Peek(); int enterInstLocation = 0;
+                                   bool external = false; 
+                                   TastierType mytype = TastierType.Undefined;
+                                 .)
 = '_' ( "void" | Type<out returntype>) 
 
                                  (. /*void is represented by 'TastierType.Undefined'*/
@@ -451,26 +459,49 @@ ProcDecl                        (. int parameters=0; string returntypestring="";
                                     currentScope.Push(new Symbol(name, (int)TastierKind.Proc, (int)TastierType.Undefined, openScopes.Count, -1));
                                     openScopes.Push(new Scope());
                                     currentScope = openScopes.Peek();
-
-
-                                .)
-  '(' 
-[  Type<out returntype>  Ident<out name1>        (.  parameters++; .) 
-  { 
-    ',' Type<out returntype>  Ident<out name1>        (.  parameters++; .)
-
-  }
-] 
-   ')'   (.
-               
-            declaredFuncs.Add(new FuncSymbol(name, parameters, returntypestring));
-
-         .)
-  '{'                           (.
                                     program.Add(new Instruction("", "Enter 0"));
                                     enterInstLocation = program.Count - 1;
                                     label = generateProcedureName(name);
                                     openProcedureDeclarations.Push(name);
+
+
+                                .)
+  '(' 
+[  Type<out mytype>   Ident<out name1>              
+                                                  (.
+                                                  parameters++; 
+                                                  mySym = new Symbol(name1, (int)TastierKind.Var,(int)mytype, openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
+                                                  currentScope.Push(mySym );
+                                                  Console.WriteLine("Function Parameter declared. (name = "+ mySym.Item1+", kind = "+mySym.Item2+", type = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+")");
+                                    
+                                .)
+ 
+
+  { 
+    ',' Type<out mytype>  Ident<out name1>        (.  
+                                                        parameters++;
+                                                        mySym = new Symbol(name1, (int)TastierKind.Var,(int)mytype,openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
+                                                        currentScope.Push(mySym );
+                                                        Console.WriteLine("Function Parameter declared. (name = "+ mySym.Item1+", kind = "+mySym.Item2+", type = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+")");
+
+                                                        .)
+
+  }
+] 
+   ')'   (.
+               //doesn't work
+            declaredFuncs.Add(new FuncSymbol(name, parameters, returntypestring));
+            /*pass in function values*/
+               Instruction IS;
+            while(PassIn.Count != 0){
+                IS = PassIn.Pop();
+               string i = IS.Item1;
+               string i1 = IS.Item2;
+              // program.Add(new Instruction(i, i1));
+            }
+
+         .)
+  '{'                           (.
        
                              /*
                                       Enter is supposed to have as an
@@ -766,7 +797,7 @@ SimpleAssignment                (.  string varname=""; string newname; TastierTy
                                       SemErr("reference to undefined variable " + name);
                                     }
                                 .)
-  ( ":="                         (.
+   ":="                         (.
                                     if ((TastierKind)sym.Item2 != TastierKind.Var) {
                                       SemErr("cannot assign to non-variable");
                                     }
@@ -789,7 +820,7 @@ SimpleAssignment                (.  string varname=""; string newname; TastierTy
                                       program.Add(new Instruction("", "Sto " + lexicalLevelDifference + " " + sym.Item5));
                                     }
                                 .)
-  | '(' ')' ';'                 (.
+ /* | '(' ')' ';'                 (.
                                     if ((TastierKind)sym.Item2 != TastierKind.Proc) {
                                       SemErr("object is not a procedure");
                                     }
@@ -800,7 +831,9 @@ SimpleAssignment                (.  string varname=""; string newname; TastierTy
                                     program.Add(new Instruction("", "Call " + lexicalLevelDifference + " " + procedureLabel));
 
                                  .)
-  ).
+  )*/
+
+.
 
 
 
@@ -836,6 +869,7 @@ Stat                            (.  string varname = ""; string newname; Tastier
                                         program.Add(new Instruction("", "StoG " + sym.Item1));
                                         // if the symbol is external, we also store it by name. The linker will resolve the name to an address.
                                       } else {
+                                        //passin
                                         program.Add(new Instruction("", "StoG " + (sym.Item5+3)));
                                       }
                                     }
@@ -917,7 +951,37 @@ Stat                            (.  string varname = ""; string newname; Tastier
  
                                 .)
   )
-  | '(' ')' ';'                 (.
+  | '('                               (. int parameters = 0; .)                         
+                               
+  { Expr<out type,  varname>        (. parameters++;
+                                    Symbol sym1 = lookup(openScopes, name);
+                                    if (sym1 == null) {
+                                      sym1 = _lookup(externalDeclarations, name);
+                                      isExternal = true;
+                                    }
+                                    if (sym1 == null) {
+                                      SemErr("reference to undefined variable " + name);
+                                    }
+ 
+                                    int lexicalLevelDifference2 = Math.Abs(openScopes.Count - sym1.Item4);
+                                    PassIn.Push(new Instruction("", "StoG " + (sym1.Item5+3)));
+                                    PassIn.Push(new Instruction("", "Load " + lexicalLevelDifference2 + " " + sym1.Item5));
+
+
+                                      .) 
+
+ }
+ ')' ';'                 (.
+
+                                   bool valid = false;
+                                   foreach(FuncSymbol FS in declaredFuncs){
+                                      if(FS.Item1 == name && FS.Item2 == parameters){
+                                        valid = true;
+                                      }
+                                   }
+                                    if(valid == false){
+                                       SemErr("wrong no. of parameters");
+                                    }
                                     if ((TastierKind)sym.Item2 != TastierKind.Proc) {
                                       SemErr("object is not a procedure");
                                     }
@@ -1306,12 +1370,7 @@ ConstDecl<bool external>        (.
                                       SemErr("incompatible types");
                                     }
                                     if (sym.Item4 == 0) {
-                                    //  if (isExternal) {
-                              //          program.Add(new Instruction("", "StoG " + sym.Item1));
-                                        // if the symbol is external, we also store it by name. The linker will resolve the name to an address.
-                                    //  } else {
                                         program.Add(new Instruction("", "StoG " + (sym.Item5+3)));
-                                    //  }
                                     }
                                     else {
                                       int lexicalLevelDifference = Math.Abs(openScopes.Count - sym.Item4)-1;
@@ -1444,8 +1503,6 @@ VarDecl<bool external>          (.
                                       .)
 
  | 
-
-
   Ident<out name>               (.
                                     foreach(char c in name){
                                        if(c == '.'){
@@ -1469,24 +1526,6 @@ VarDecl<bool external>          (.
 
                                     }
                                 .)
-/*  { ',' Ident<out name>         (.
-                                    foreach(char c in name){
-                                       if(c == '.'){
-                                         SemErr("Cannot use the dot operator when declaring a variable.");
-                                       }
-                                    }
-
-                                    if (external) {
-                                      Symbol mySym = new Symbol(name, (int)TastierKind.Var, (int)type, 0, 0);
-                                      externalDeclarations.Push(mySym);
-                                      Console.WriteLine("Variable declared. (name = "+ mySym.Item1+", kind = "+mySym.Item2+ ", type = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+")");
-                                    } else {
-                                     Symbol mySym = new Symbol(name, (int)TastierKind.Var,(int)type,openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
-                                     currentScope.Push(mySym );
-                                      Console.WriteLine("Variable declared. (name = "+ mySym.Item1+", kind = "+mySym.Item2+ ", type = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+")");
-                                    }
-                                .)
-  }*/ 
 
    ';' 
  )

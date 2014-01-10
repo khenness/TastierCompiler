@@ -2,8 +2,6 @@
 .proc Main
 .proc myfun
 myfun: Enter 1
-Const 999
-Sto 0 0
 Load 0 0
 Write
 Leave
@@ -17,6 +15,9 @@ Sto 0 1
 L$0: Nop
 Load 0 1
 Write
+Const 41
+Sto 0 1
+Load 0 1
 Call 1 myfun
 Leave
 Ret

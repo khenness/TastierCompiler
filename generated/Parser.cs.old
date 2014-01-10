@@ -150,6 +150,9 @@ List<ArraySymbol> declaredArrays = new List<ArraySymbol>();
 /*storing extra info about functions*/
 List<FuncSymbol> declaredFuncs = new List<FuncSymbol>();
 
+/*passing in parameters*/
+Stack<Instruction> PassIn = new Stack<Instruction>();
+
 Stack<Scope> openScopes = new Stack<Scope>();
 Scope externalDeclarations = new Scope();
 
@@ -522,7 +525,12 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 	}
 
 	void ProcDecl() {
-		int parameters=0; string returntypestring="";  string name1; TastierType returntype = TastierType.Undefined; string name; string label; Scope currentScope = openScopes.Peek(); int enterInstLocation = 0; bool external = false; 
+		Symbol mySym; int parameters=0; string returntypestring="";  string name1; 
+		TastierType returntype = TastierType.Undefined; string name; string label;
+		Scope currentScope = openScopes.Peek(); int enterInstLocation = 0;
+		bool external = false; 
+		TastierType mytype = TastierType.Undefined;
+		
 		Expect(9);
 		if (la.kind == 10) {
 			Get();
@@ -544,40 +552,48 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		currentScope.Push(new Symbol(name, (int)TastierKind.Proc, (int)TastierType.Undefined, openScopes.Count, -1));
 		openScopes.Push(new Scope());
 		currentScope = openScopes.Peek();
-		
-		Expect(11);
-		if (la.kind == 41 || la.kind == 42) {
-			Type(out returntype);
-			Ident(out name1);
-			parameters++; 
-			while (la.kind == 12) {
-				Get();
-				Type(out returntype);
-				Ident(out name1);
-				parameters++; 
-			}
-		}
-		Expect(13);
-		declaredFuncs.Add(new FuncSymbol(name, parameters, returntypestring));
-		
-		
-		Expect(14);
 		program.Add(new Instruction("", "Enter 0"));
 		enterInstLocation = program.Count - 1;
 		label = generateProcedureName(name);
 		openProcedureDeclarations.Push(name);
-		/*
-		 Enter is supposed to have as an
-		 argument the next free address on the
-		 stack, but until we know how many
-		 local variables are in this procedure,
-		 we don't know what that is. We'll keep
-		 track of where we put the Enter
-		 instruction in the program so that
-		 later, when we know how many spaces on
-		 the stack have been allocated, we can
-		 put the right value in.
-		*/
+		
+		
+		
+		Expect(11);
+		if (la.kind == 41 || la.kind == 42) {
+			Type(out mytype);
+			Ident(out name1);
+			parameters++; 
+			mySym = new Symbol(name1, (int)TastierKind.Var,(int)mytype, openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
+			currentScope.Push(mySym );
+			Console.WriteLine("Function Parameter declared. (name = "+ mySym.Item1+", kind = "+mySym.Item2+", type = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+")");
+			
+			
+			while (la.kind == 12) {
+				Get();
+				Type(out mytype);
+				Ident(out name1);
+				parameters++;
+				mySym = new Symbol(name1, (int)TastierKind.Var,(int)mytype,openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));
+				currentScope.Push(mySym );
+				Console.WriteLine("Function Parameter declared. (name = "+ mySym.Item1+", kind = "+mySym.Item2+", type = "+mySym.Item3+", stackframe = "+mySym.Item4+", stackframeoffset = "+mySym.Item5+")");
+				
+				
+			}
+		}
+		Expect(13);
+		declaredFuncs.Add(new FuncSymbol(name, parameters, returntypestring));
+		/*pass in function values*/
+		  Instruction IS;
+		while(PassIn.Count != 0){
+		   IS = PassIn.Pop();
+		  string i = IS.Item1;
+		  string i1 = IS.Item2;
+		  program.Add(new Instruction(i, i1));
+		}
+		
+		
+		Expect(14);
 		
 		while (StartOf(2)) {
 			if (la.kind == 41 || la.kind == 42) {
@@ -919,6 +935,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 					   program.Add(new Instruction("", "StoG " + sym.Item1));
 					   // if the symbol is external, we also store it by name. The linker will resolve the name to an address.
 					 } else {
+					   //passin
 					   program.Add(new Instruction("", "StoG " + (sym.Item5+3)));
 					 }
 					}
@@ -993,10 +1010,39 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 				} else SynErr(56);
 			} else if (la.kind == 11) {
 				Get();
+				int parameters = 0; 
+				while (StartOf(4)) {
+					Expr(out type,  varname);
+					parameters++;
+					Symbol sym1 = lookup(openScopes, name);
+					if (sym1 == null) {
+					sym1 = _lookup(externalDeclarations, name);
+					isExternal = true;
+					}
+					if (sym1 == null) {
+					SemErr("reference to undefined variable " + name);
+					}
+					
+					int lexicalLevelDifference2 = Math.Abs(openScopes.Count - sym1.Item4);
+					PassIn.Push(new Instruction("", "StoG " + (sym1.Item5+3)));
+					PassIn.Push(new Instruction("", "Load " + lexicalLevelDifference2 + " " + sym1.Item5));
+					
+					
+					
+				}
 				Expect(13);
 				Expect(23);
+				bool valid = false;
+				foreach(FuncSymbol FS in declaredFuncs){
+				  if(FS.Item1 == name && FS.Item2 == parameters){
+				    valid = true;
+				  }
+				}
+				if(valid == false){
+				   SemErr("wrong no. of parameters");
+				}
 				if ((TastierKind)sym.Item2 != TastierKind.Proc) {
-				 SemErr("object is not a procedure");
+				  SemErr("object is not a procedure");
 				}
 				
 				int currentStackLevel = openScopes.Count;
@@ -1056,7 +1102,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 				program.Add(new Instruction("", "FJmp " + openLabels.Peek())); 
 				
 				Stat();
-				if (StartOf(4)) {
+				if (StartOf(5)) {
 					while (la.kind == 22 || la.kind == 41 || la.kind == 42) {
 						if (la.kind == 41 || la.kind == 42) {
 							VarDecl(external);
@@ -1076,7 +1122,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 				Get();
 				Expect(29);
 				Stat();
-				if (StartOf(4)) {
+				if (StartOf(5)) {
 					while (la.kind == 22 || la.kind == 41 || la.kind == 42) {
 						if (la.kind == 41 || la.kind == 42) {
 							VarDecl(external);
@@ -1199,7 +1245,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		}
 		case 14: {
 			Get();
-			while (StartOf(5)) {
+			while (StartOf(6)) {
 				if (StartOf(3)) {
 					Stat();
 				} else if (la.kind == 22) {
@@ -1274,45 +1320,29 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		 SemErr("reference to undefined variable " + name);
 		}
 		
-		if (la.kind == 27) {
-			Get();
-			if ((TastierKind)sym.Item2 != TastierKind.Var) {
-			 SemErr("cannot assign to non-variable");
-			}
-			
-			Expr(out type,  varname);
-			Expect(23);
-			if (type != (TastierType)sym.Item3) {
-			 SemErr("incompatible types");  //=
-			}
-			if (sym.Item4 == 0) {
-			 if (isExternal) {
-			   program.Add(new Instruction("", "StoG " + sym.Item1));
-			   // if the symbol is external, we also store it by name. The linker will resolve the $
-			 } else {
-			   program.Add(new Instruction("", "StoG " + (sym.Item5+3)));
-			 }
-			}
-			else {
-			 int lexicalLevelDifference = Math.Abs(openScopes.Count - sym.Item4)-1;
-			 program.Add(new Instruction("", "Sto " + lexicalLevelDifference + " " + sym.Item5));
-			}
-			
-		} else if (la.kind == 11) {
-			Get();
-			Expect(13);
-			Expect(23);
-			if ((TastierKind)sym.Item2 != TastierKind.Proc) {
-			 SemErr("object is not a procedure");
-			}
-			
-			int currentStackLevel = openScopes.Count;
-			int lexicalLevelDifference = Math.Abs(openScopes.Count - sym.Item4);
-			string procedureLabel = getLabelForProcedureName(lexicalLevelDifference, sym.Item1);
-			program.Add(new Instruction("", "Call " + lexicalLevelDifference + " " + procedureLabel));
-			
-			
-		} else SynErr(59);
+		Expect(27);
+		if ((TastierKind)sym.Item2 != TastierKind.Var) {
+		 SemErr("cannot assign to non-variable");
+		}
+		
+		Expr(out type,  varname);
+		Expect(23);
+		if (type != (TastierType)sym.Item3) {
+		 SemErr("incompatible types");  //=
+		}
+		if (sym.Item4 == 0) {
+		 if (isExternal) {
+		   program.Add(new Instruction("", "StoG " + sym.Item1));
+		   // if the symbol is external, we also store it by name. The linker will resolve the $
+		 } else {
+		   program.Add(new Instruction("", "StoG " + (sym.Item5+3)));
+		 }
+		}
+		else {
+		 int lexicalLevelDifference = Math.Abs(openScopes.Count - sym.Item4)-1;
+		 program.Add(new Instruction("", "Sto " + lexicalLevelDifference + " " + sym.Item5));
+		}
+		
 	}
 
 	void Tastier() {
@@ -1332,7 +1362,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		openScopes.Push(new Scope());
 		
 		Expect(14);
-		while (StartOf(6)) {
+		while (StartOf(7)) {
 			if (la.kind == 22) {
 				StructDecl(external);
 			} else if (la.kind == 41 || la.kind == 42) {
@@ -1484,7 +1514,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			Ident(out name);
 			Expect(23);
 			externalDeclarations.Push(new Symbol(name, (int)TastierKind.Proc, (int)TastierType.Undefined, 1, -1)); 
-		} else SynErr(60);
+		} else SynErr(59);
 	}
 
 	void ConstDecl(bool external) {
@@ -1510,12 +1540,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		 SemErr("incompatible types");
 		}
 		if (sym.Item4 == 0) {
-		//  if (isExternal) {
-		//          program.Add(new Instruction("", "StoG " + sym.Item1));
-		   // if the symbol is external, we also store it by name. The linker will resolve the name to an address.
-		//  } else {
 		   program.Add(new Instruction("", "StoG " + (sym.Item5+3)));
-		//  }
 		}
 		else {
 		 int lexicalLevelDifference = Math.Abs(openScopes.Count - sym.Item4)-1;
@@ -1573,6 +1598,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		{x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, T,T,T,T, T,T,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x},
 		{x,x,T,x, x,x,x,x, x,T,x,x, x,x,T,x, x,x,x,x, x,x,T,x, x,x,x,x, x,x,T,x, T,x,x,x, T,T,T,T, x,T,T,x, x,x,x,x},
 		{x,x,T,x, x,x,x,x, x,x,x,x, x,x,T,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,T,x, T,x,x,x, T,T,T,T, x,x,x,x, x,x,x,x},
+		{x,T,T,x, T,T,T,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x},
 		{x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,T,x, x,x,x,x, x,x,x,x, x,x,T,x, x,x,x,x, x,T,T,x, x,x,x,x},
 		{x,x,T,x, x,x,x,x, x,x,x,x, x,x,T,x, x,x,x,x, x,x,T,x, x,x,x,x, x,x,T,x, T,x,x,x, T,T,T,T, x,T,T,x, x,x,x,x},
 		{x,x,x,x, x,x,x,x, x,T,x,x, x,x,x,x, x,x,x,x, x,x,T,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,T,T,T, T,x,x,x}
@@ -1648,8 +1674,7 @@ public class Errors {
 			case 56: s = "invalid Stat"; break;
 			case 57: s = "invalid Stat"; break;
 			case 58: s = "invalid Stat"; break;
-			case 59: s = "invalid SimpleAssignment"; break;
-			case 60: s = "invalid ExternDecl"; break;
+			case 59: s = "invalid ExternDecl"; break;
 
 			default: s = "error " + n; break;
 		}

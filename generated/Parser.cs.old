@@ -20,7 +20,7 @@ public class Parser {
 	public const int _EOF = 0;
 	public const int _number = 1;
 	public const int _ident = 2;
-	public const int maxT = 41;
+	public const int maxT = 45;
 
 	const bool T = true;
 	const bool x = false;
@@ -371,15 +371,15 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		} else if (la.kind == 4) {
 			Get();
 			inst = new Instruction("", "Sub"); 
-		} else SynErr(42);
+		} else SynErr(46);
 	}
 
-	void Expr(out TastierType type) {
-		TastierType type1; Instruction inst; 
-		SimExpr(out type);
+	void Expr(out TastierType type, string varname) {
+		string varname1 ="";  TastierType type1; Instruction inst; 
+		SimExpr(out type, varname);
 		if (StartOf(1)) {
 			RelOp(out inst);
-			SimExpr(out type1);
+			SimExpr(out type1, varname1);
 			if (type != type1) {
 			 SemErr("incompatible types");
 			}
@@ -391,12 +391,12 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		}
 	}
 
-	void SimExpr(out TastierType type) {
-		TastierType type1; Instruction inst; 
-		Term(out type);
+	void SimExpr(out TastierType type, string varname) {
+		string varname1=""; TastierType type1; Instruction inst; 
+		Term(out type, varname);
 		while (la.kind == 3 || la.kind == 4) {
 			AddOp(out inst);
-			Term(out type1);
+			Term(out type1, varname1);
 			if (type != TastierType.Integer || type1 != TastierType.Integer) {
 			 SemErr("integer type expected");
 			}
@@ -408,41 +408,41 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 	void RelOp(out Instruction inst) {
 		inst = new Instruction("", "Equ"); 
 		switch (la.kind) {
-		case 16: {
+		case 14: {
 			Get();
 			break;
 		}
-		case 17: {
+		case 15: {
 			Get();
 			inst = new Instruction("", "Lss"); 
 			break;
 		}
-		case 18: {
+		case 16: {
 			Get();
 			inst = new Instruction("", "Gtr"); 
 			break;
 		}
-		case 19: {
+		case 17: {
 			Get();
 			inst = new Instruction("", "Neq"); 
 			break;
 		}
-		case 20: {
+		case 18: {
 			Get();
 			inst = new Instruction("", "Leq"); 
 			break;
 		}
-		case 21: {
+		case 19: {
 			Get();
 			inst = new Instruction("", "Geq"); 
 			break;
 		}
-		default: SynErr(43); break;
+		default: SynErr(47); break;
 		}
 	}
 
-	void Factor(out TastierType type) {
-		int n; Symbol sym; string name; 
+	void Factor(out TastierType type, string varname) {
+		string varname1 =""; int n; Symbol sym; string name; 
 		type = TastierType.Undefined; 
 		if (la.kind == 2) {
 			Ident(out name);
@@ -454,7 +454,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			}
 			
 			if (sym == null) {
-			 SemErr("reference to undefined variable " + name);
+			 SemErr("reference to undefined variable " + name+"  [Factor nonterminal]");
 			}
 			else {
 			 type = (TastierType)sym.Item3;
@@ -465,11 +465,15 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			         // if the symbol is external, we load it by name. The linker will resolve the name to an address.
 			       } else {
 			         program.Add(new Instruction("", "LoadG " + (sym.Item5+3)));
+			          //here
+			
 			       }
 			   } else {
 			       int lexicalLevelDifference = Math.Abs(openScopes.Count - sym.Item4)-1;
 			       program.Add(new Instruction("", "Load " + lexicalLevelDifference + " " + sym.Item5));
-			   }
+			         //here
+			
+			    }
 			 } else SemErr("variable expected");
 			}
 			
@@ -481,7 +485,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			
 		} else if (la.kind == 4) {
 			Get();
-			Factor(out type);
+			Factor(out type, varname1);
 			if (type != TastierType.Integer) {
 			 SemErr("integer type expected");
 			 type = TastierType.Integer;
@@ -496,38 +500,35 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		} else if (la.kind == 6) {
 			Get();
 			program.Add(new Instruction("", "Const " + 0)); type = TastierType.Boolean; 
-		} else SynErr(44);
+		} else SynErr(48);
 	}
 
 	void Ident(out string name) {
 		Expect(2);
 		name = t.val; 
-		Expect(7);
-		Expect(2);
-		Expect(8);
 	}
 
 	void MulOp(out Instruction inst) {
 		inst = new Instruction("", "Mul"); 
-		if (la.kind == 9) {
+		if (la.kind == 7) {
 			Get();
-		} else if (la.kind == 10) {
+		} else if (la.kind == 8) {
 			Get();
 			inst = new Instruction("", "Div"); 
-		} else SynErr(45);
+		} else SynErr(49);
 	}
 
 	void ProcDecl() {
 		string name; string label; Scope currentScope = openScopes.Peek(); int enterInstLocation = 0; bool external = false; 
-		Expect(11);
+		Expect(9);
 		Ident(out name);
 		currentScope.Push(new Symbol(name, (int)TastierKind.Proc, (int)TastierType.Undefined, openScopes.Count, -1));
 		openScopes.Push(new Scope());
 		currentScope = openScopes.Peek();
 		
+		Expect(10);
+		Expect(11);
 		Expect(12);
-		Expect(13);
-		Expect(14);
 		program.Add(new Instruction("", "Enter 0"));
 		enterInstLocation = program.Count - 1;
 		label = generateProcedureName(name);
@@ -546,9 +547,9 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		*/
 		
 		while (StartOf(2)) {
-			if (la.kind == 36 || la.kind == 37) {
+			if (la.kind == 40 || la.kind == 41) {
 				VarDecl(external);
-			} else if (la.kind == 22) {
+			} else if (la.kind == 20) {
 				StructDecl(external);
 			} else if (StartOf(3)) {
 				Stat();
@@ -567,7 +568,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 				program.Add(new Instruction(openLabels.Pop(), "Nop")); 
 			}
 		}
-		Expect(15);
+		Expect(13);
 		program.Add(new Instruction("", "Leave"));
 		program.Add(new Instruction("", "Ret"));
 		openScopes.Pop();
@@ -582,7 +583,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		int dimensions; string name; TastierType type; Scope currentScope = openScopes.Peek();
 		
 		Type(out type);
-		if (la.kind == 7) {
+		if (la.kind == 22) {
 			int n; int total =1; Queue<int> numElementsQueue = new Queue<int>();
 			string indexname;  
 			
@@ -593,8 +594,8 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			total = total * (n+1);
 			numElementsQueue.Enqueue(n);
 			
-			Expect(8);
-			while (la.kind == 7) {
+			Expect(23);
+			while (la.kind == 22) {
 				Get();
 				Expect(1);
 				dimensions = dimensions+1;
@@ -602,10 +603,10 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 				total = total * (n+1);   //total is the number of elements we will generate.
 				numElementsQueue.Enqueue(n);
 				
-				Expect(8);
+				Expect(23);
 			}
 			Ident(out name);
-			Expect(23);
+			Expect(21);
 			string typestring = "undefined";
 			if(type == TastierType.Integer){
 			 typestring = "int";
@@ -689,16 +690,16 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			
 			}
 			
-			Expect(23);
-		} else SynErr(46);
+			Expect(21);
+		} else SynErr(50);
 	}
 
 	void StructDecl(bool external) {
 		string structname2; int n; int total =1; Queue<int> numElementsQueue = new Queue<int>();  string structname; int dimensions = 0; Scope currentScope = openScopes.Peek(); string instancename; TastierKind kind = TastierKind.Var;  bool structnameUnique = true;  string membername; TastierType type = TastierType.Undefined;
 		
-		Expect(22);
+		Expect(20);
 		Ident(out structname);
-		if (la.kind == 7) {
+		if (la.kind == 22) {
 			Get();
 			dimensions = 1; 
 			Expect(1);
@@ -710,8 +711,8 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			total = total * (n+1);  //total is the total number of elements we will generate    
 			numElementsQueue.Enqueue(n);
 			
-			Expect(8);
-			while (la.kind == 7) {
+			Expect(23);
+			while (la.kind == 22) {
 				Get();
 				dimensions = dimensions+1;
 				Expect(1);
@@ -719,10 +720,10 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 				total = total * (n+1);   //total is the number of elements we will generate.
 				numElementsQueue.Enqueue(n);
 				
-				Expect(8);
+				Expect(23);
 			}
 			Ident(out instancename);
-			Expect(23);
+			Expect(21);
 			string structstring = "struct_"+structname;
 			//We are keeping a list of arrays declared in the program.
 			foreach(ArraySymbol AS in declaredArrays){
@@ -780,7 +781,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			
 		} else if (la.kind == 2) {
 			Ident(out instancename);
-			Expect(23);
+			Expect(21);
 			if(definedStructs.ContainsKey(structname) == true){
 			Console.WriteLine("Struct '"+instancename+"' of type '"+structname+"' instantiated. (");
 			  foreach(KeyValuePair<string, StructMember> kvp in definedStructs[structname]){
@@ -799,7 +800,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			
 			
 			
-		} else if (la.kind == 14) {
+		} else if (la.kind == 12) {
 			Get();
 			structnameUnique = true;
 			foreach (KeyValuePair<string, Dictionary<string, StructMember>> VarList in definedStructs){
@@ -810,19 +811,19 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			definedStructs.Add(structname, new Dictionary<string,StructMember>());
 			     
 			
-			if (la.kind == 22) {
+			if (la.kind == 20) {
 				InternalStruct(structname);
-			} else if (la.kind == 36 || la.kind == 37) {
+			} else if (la.kind == 40 || la.kind == 41) {
 				Type(out type);
 				Ident(out membername);
 				kind = TastierKind.Var;                                          
 				definedStructs[structname].Add(membername, new StructMember((int)type, (int)kind));   
 				
 				
-				Expect(23);
-			} else SynErr(47);
-			while (la.kind == 22 || la.kind == 36 || la.kind == 37) {
-				if (la.kind == 22) {
+				Expect(21);
+			} else SynErr(51);
+			while (la.kind == 20 || la.kind == 40 || la.kind == 41) {
+				if (la.kind == 20) {
 					InternalStruct(structname);
 				} else {
 					Type(out type);
@@ -830,7 +831,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 					kind = TastierKind.Var;
 					definedStructs[structname].Add(membername, new StructMember((int)type, (int)kind));
 					
-					Expect(23);
+					Expect(21);
 				}
 			}
 			Expect(24);
@@ -840,11 +841,11 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			}
 			Console.WriteLine( ")" );
 			
-		} else SynErr(48);
+		} else SynErr(52);
 	}
 
 	void Stat() {
-		string newname; TastierType type; TastierType typeA; TastierType typeB;  string name =""; Symbol sym; bool external = false; bool isExternal = false; 
+		string varname = ""; string newname; TastierType type; TastierType typeA; TastierType type1;  TastierType typeB;  string name =""; Symbol sym; bool external = false; bool isExternal = false; 
 		switch (la.kind) {
 		case 2: {
 			Ident(out name);
@@ -863,8 +864,8 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 				 SemErr("cannot assign to non-variable");
 				}
 				
-				Expr(out type);
-				if (la.kind == 23) {
+				Expr(out type, name);
+				if (la.kind == 21) {
 					Get();
 					if (type != (TastierType)sym.Item3) {
 					 SemErr("incompatible types");  //=
@@ -897,7 +898,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 					
 					
 					
-					Expr(out typeA);
+					Expr(out typeA, varname);
 					Expect(27);
 					if (typeA != (TastierType)sym.Item3) {
 					    SemErr("incompatible types");  //=
@@ -921,8 +922,8 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 					program.Add(new Instruction(elselabel, "Nop"));
 					
 					
-					Expr(out typeB);
-					Expect(23);
+					Expr(out typeB, varname);
+					Expect(21);
 					if (typeB != (TastierType)sym.Item3) {
 					    SemErr("incompatible types");  //=
 					  }
@@ -945,11 +946,11 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 					program.Add(new Instruction(endlabel, "Nop"));
 					
 					
-				} else SynErr(49);
-			} else if (la.kind == 12) {
+				} else SynErr(53);
+			} else if (la.kind == 10) {
 				Get();
-				Expect(13);
-				Expect(23);
+				Expect(11);
+				Expect(21);
 				if ((TastierKind)sym.Item2 != TastierKind.Proc) {
 				 SemErr("object is not a procedure");
 				}
@@ -959,14 +960,14 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 				string procedureLabel = getLabelForProcedureName(lexicalLevelDifference, sym.Item1);
 				program.Add(new Instruction("", "Call " + lexicalLevelDifference + " " + procedureLabel));
 				
-			} else SynErr(50);
+			} else SynErr(54);
 			break;
 		}
 		case 28: {
 			Get();
-			Expect(12);
-			Expr(out type);
-			Expect(13);
+			Expect(10);
+			Expr(out type,  varname);
+			Expect(11);
 			if ((TastierType)type != TastierType.Boolean) {
 			 SemErr("boolean type expected");
 			}
@@ -993,13 +994,68 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		}
 		case 30: {
 			Get();
+			Expect(10);
+			Expr(out type,  varname);
+			Expect(11);
+			Expect(12);
+			openLabels.Push(generateLabel());
+			
+			while (la.kind == 31) {
+				Get();
+				Expr(out type1,  varname);
+				Expect(27);
+				if (type != type1){ 
+				  SemErr("incompatible types in switch statement");
+				}
+				openLabels.Push(generateLabel());
+				program.Add(new Instruction("", "Equ"));
+				program.Add(new Instruction("", "FJmp " + openLabels.Peek())); 
+				
+				Stat();
+				if (StartOf(4)) {
+					while (la.kind == 20 || la.kind == 40 || la.kind == 41) {
+						if (la.kind == 40 || la.kind == 41) {
+							VarDecl(external);
+						} else {
+							StructDecl(external);
+						}
+					}
+				}
+				string label = openLabels.Pop();
+				program.Add(new Instruction("", "Jmp " + openLabels.Peek() ));
+				program.Add(new Instruction(label, "Nop"));
+				
+				
+				Expect(32);
+			}
+			if (la.kind == 33) {
+				Get();
+				Expect(27);
+				Stat();
+				if (StartOf(4)) {
+					while (la.kind == 20 || la.kind == 40 || la.kind == 41) {
+						if (la.kind == 40 || la.kind == 41) {
+							VarDecl(external);
+						} else {
+							StructDecl(external);
+						}
+					}
+				}
+				Expect(32);
+			}
+			Expect(13);
+			program.Add(new Instruction(openLabels.Pop(), "Nop"));  
+			break;
+		}
+		case 34: {
+			Get();
 			string loopStartLabel = generateLabel();
 			openLabels.Push(generateLabel()); //second label is for the loop end
 			program.Add(new Instruction(loopStartLabel, "Nop"));
 			
-			Expect(12);
-			Expr(out type);
-			Expect(13);
+			Expect(10);
+			Expr(out type,  varname);
+			Expect(11);
 			if ((TastierType)type != TastierType.Boolean) {
 			 SemErr("boolean type expected");
 			}
@@ -1011,9 +1067,9 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			
 			break;
 		}
-		case 31: {
+		case 35: {
 			Get();
-			Expect(12);
+			Expect(10);
 			SimpleAssignment();
 			string CompareStartLabel = generateLabel(); 
 			program.Add(new Instruction("", "Jmp " + CompareStartLabel)); //There was some attempted trickery here with assembly language loops. This jump does literally nothing now.
@@ -1021,9 +1077,9 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			openLabels.Push(generateLabel()); //second label is for the loop end
 			program.Add(new Instruction(loopStartLabel, "Nop"));
 			
-			Expr(out type);
+			Expr(out type, varname);
 			SimpleAssignment();
-			Expect(13);
+			Expect(11);
 			if ((TastierType)type != TastierType.Boolean) {
 			 SemErr("boolean type expected");
 			}
@@ -1040,10 +1096,10 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			
 			break;
 		}
-		case 32: {
+		case 36: {
 			Get();
 			Ident(out name);
-			Expect(23);
+			Expect(21);
 			sym = lookup(openScopes, name);
 			if (sym == null) {
 			 sym = _lookup(externalDeclarations, name);
@@ -1077,50 +1133,50 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			
 			break;
 		}
-		case 33: {
+		case 37: {
 			Get();
-			Expr(out type);
+			Expr(out type, varname);
 			if (type != TastierType.Integer) {
 			 SemErr("integer type expected");
 			}
 			program.Add(new Instruction("", "Write"));
 			
-			while (la.kind == 34) {
+			while (la.kind == 38) {
 				Get();
-				Expr(out type);
+				Expr(out type,  varname);
 				if (type != TastierType.Integer) {
 				 SemErr("integer type expected");
 				}
 				program.Add(new Instruction("", "Write"));
 				
 			}
-			Expect(23);
+			Expect(21);
 			break;
 		}
-		case 14: {
+		case 12: {
 			Get();
-			while (StartOf(4)) {
+			while (StartOf(5)) {
 				if (StartOf(3)) {
 					Stat();
-				} else if (la.kind == 22) {
+				} else if (la.kind == 20) {
 					StructDecl(external);
 				} else {
 					VarDecl(external);
 				}
 			}
-			Expect(15);
+			Expect(13);
 			break;
 		}
-		default: SynErr(51); break;
+		default: SynErr(55); break;
 		}
 	}
 
-	void Term(out TastierType type) {
-		TastierType type1; Instruction inst; 
-		Factor(out type);
-		while (la.kind == 9 || la.kind == 10) {
+	void Term(out TastierType type, string varname) {
+		string varname1 =""; TastierType type1; Instruction inst; 
+		Factor(out type, varname);
+		while (la.kind == 7 || la.kind == 8) {
 			MulOp(out inst);
-			Factor(out type1);
+			Factor(out type1, varname1);
 			if (type != TastierType.Integer ||
 			   type1 != TastierType.Integer) {
 			 SemErr("integer type expected");
@@ -1132,10 +1188,10 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 
 	void InternalStruct(string parentstruct) {
 		TastierType type; TastierKind kind; string structname; string instancename; 
-		Expect(22);
+		Expect(20);
 		Ident(out structname);
 		Ident(out instancename);
-		Expect(23);
+		Expect(21);
 		if(parentstruct == structname){
 		
 		SemErr("ERROR - you have a '"+ structname+"' struct inside its own definition! ");
@@ -1164,17 +1220,17 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 
 	void Type(out TastierType type) {
 		type = TastierType.Undefined; 
-		if (la.kind == 36) {
+		if (la.kind == 40) {
 			Get();
 			type = TastierType.Integer; 
-		} else if (la.kind == 37) {
+		} else if (la.kind == 41) {
 			Get();
 			type = TastierType.Boolean; 
-		} else SynErr(52);
+		} else SynErr(56);
 	}
 
 	void SimpleAssignment() {
-		string newname; TastierType type; string name; Symbol sym; bool external = false;  bool isExternal = false; 
+		string varname=""; string newname; TastierType type; string name; Symbol sym; bool external = false;  bool isExternal = false; 
 		Ident(out name);
 		sym = lookup(openScopes, name);
 		if (sym == null) {
@@ -1191,8 +1247,8 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			 SemErr("cannot assign to non-variable");
 			}
 			
-			Expr(out type);
-			Expect(23);
+			Expr(out type,  varname);
+			Expect(21);
 			if (type != (TastierType)sym.Item3) {
 			 SemErr("incompatible types");  //=
 			}
@@ -1209,10 +1265,10 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			 program.Add(new Instruction("", "Sto " + lexicalLevelDifference + " " + sym.Item5));
 			}
 			
-		} else if (la.kind == 12) {
+		} else if (la.kind == 10) {
 			Get();
-			Expect(13);
-			Expect(23);
+			Expect(11);
+			Expect(21);
 			if ((TastierKind)sym.Item2 != TastierKind.Proc) {
 			 SemErr("object is not a procedure");
 			}
@@ -1223,12 +1279,12 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			program.Add(new Instruction("", "Call " + lexicalLevelDifference + " " + procedureLabel));
 			
 			
-		} else SynErr(53);
+		} else SynErr(57);
 	}
 
 	void Tastier() {
 		string name; bool external = false; 
-		Expect(35);
+		Expect(39);
 		Ident(out name);
 		Console.WriteLine("");
 		Console.WriteLine("");
@@ -1242,21 +1298,21 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		
 		openScopes.Push(new Scope());
 		
-		Expect(14);
-		while (StartOf(5)) {
-			if (la.kind == 22) {
+		Expect(12);
+		while (StartOf(6)) {
+			if (la.kind == 20) {
 				StructDecl(external);
-			} else if (la.kind == 36 || la.kind == 37) {
+			} else if (la.kind == 40 || la.kind == 41) {
 				VarDecl(external);
-			} else if (la.kind == 11) {
+			} else if (la.kind == 9) {
 				ProcDecl();
-			} else if (la.kind == 39) {
+			} else if (la.kind == 43) {
 				ExternDecl();
 			} else {
 				ConstDecl(external);
 			}
 		}
-		Expect(15);
+		Expect(13);
 		if (openScopes.Peek().Count == 0) {
 		 Warn("Warning: Program " + name + " is empty ");
 		}
@@ -1387,21 +1443,21 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 
 	void ExternDecl() {
 		string name; bool external = true; Scope currentScope = openScopes.Peek(); int count = currentScope.Count; 
-		Expect(39);
-		if (la.kind == 36 || la.kind == 37) {
+		Expect(43);
+		if (la.kind == 40 || la.kind == 41) {
 			VarDecl(external);
-		} else if (la.kind == 40) {
+		} else if (la.kind == 44) {
 			Get();
 			Ident(out name);
-			Expect(23);
+			Expect(21);
 			externalDeclarations.Push(new Symbol(name, (int)TastierKind.Proc, (int)TastierType.Undefined, 1, -1)); 
-		} else SynErr(54);
+		} else SynErr(58);
 	}
 
 	void ConstDecl(bool external) {
-		string name; TastierType type; Scope currentScope = openScopes.Peek(); Symbol sym; 
+		string varname =""; string name; TastierType type; Scope currentScope = openScopes.Peek(); Symbol sym; 
 		
-		Expect(38);
+		Expect(42);
 		Type(out type);
 		Ident(out name);
 		sym = lookup(openScopes, name);
@@ -1416,7 +1472,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		 SemErr("cannot assign to non-variable");
 		}
 		
-		Expr(out type);
+		Expr(out type,  varname);
 		if (type != (TastierType)sym.Item3) {
 		 SemErr("incompatible types");
 		}
@@ -1433,7 +1489,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		 program.Add(new Instruction("", "Sto " + lexicalLevelDifference + " " + sym.Item5));
 		}
 		
-		while (la.kind == 34) {
+		while (la.kind == 38) {
 			Get();
 			Type(out type);
 			Ident(out name);
@@ -1447,7 +1503,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			 SemErr("cannot assign to non-variable");
 			}
 			
-			Expr(out type);
+			Expr(out type, varname);
 			if (type != (TastierType)sym.Item3) {
 			 SemErr("incompatible types");
 			}
@@ -1465,7 +1521,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			}
 			
 		}
-		Expect(23);
+		Expect(21);
 	}
 
 
@@ -1480,12 +1536,13 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 	}
 
 	static readonly bool[,] set = {
-		{T,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x},
-		{x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, T,T,T,T, T,T,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x},
-		{x,x,T,x, x,x,x,x, x,x,x,T, x,x,T,x, x,x,x,x, x,x,T,x, x,x,x,x, T,x,T,T, T,T,x,x, T,T,x,x, x,x,x},
-		{x,x,T,x, x,x,x,x, x,x,x,x, x,x,T,x, x,x,x,x, x,x,x,x, x,x,x,x, T,x,T,T, T,T,x,x, x,x,x,x, x,x,x},
-		{x,x,T,x, x,x,x,x, x,x,x,x, x,x,T,x, x,x,x,x, x,x,T,x, x,x,x,x, T,x,T,T, T,T,x,x, T,T,x,x, x,x,x},
-		{x,x,x,x, x,x,x,x, x,x,x,T, x,x,x,x, x,x,x,x, x,x,T,x, x,x,x,x, x,x,x,x, x,x,x,x, T,T,T,T, x,x,x}
+		{T,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x},
+		{x,x,x,x, x,x,x,x, x,x,x,x, x,x,T,T, T,T,T,T, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x},
+		{x,x,T,x, x,x,x,x, x,T,x,x, T,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, T,x,T,x, x,x,T,T, T,T,x,x, T,T,x,x, x,x,x},
+		{x,x,T,x, x,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, T,x,T,x, x,x,T,T, T,T,x,x, x,x,x,x, x,x,x},
+		{x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, T,T,x,x, x,x,x},
+		{x,x,T,x, x,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, T,x,T,x, x,x,T,T, T,T,x,x, T,T,x,x, x,x,x},
+		{x,x,x,x, x,x,x,x, x,T,x,x, x,x,x,x, x,x,x,x, T,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, T,T,T,T, x,x,x}
 
 	};
 } // end Parser
@@ -1506,54 +1563,58 @@ public class Errors {
 			case 4: s = "\"-\" expected"; break;
 			case 5: s = "\"true\" expected"; break;
 			case 6: s = "\"false\" expected"; break;
-			case 7: s = "\"[\" expected"; break;
-			case 8: s = "\"]\" expected"; break;
-			case 9: s = "\"*\" expected"; break;
-			case 10: s = "\"/\" expected"; break;
-			case 11: s = "\"void\" expected"; break;
-			case 12: s = "\"(\" expected"; break;
-			case 13: s = "\")\" expected"; break;
-			case 14: s = "\"{\" expected"; break;
-			case 15: s = "\"}\" expected"; break;
-			case 16: s = "\"=\" expected"; break;
-			case 17: s = "\"<\" expected"; break;
-			case 18: s = "\">\" expected"; break;
-			case 19: s = "\"!=\" expected"; break;
-			case 20: s = "\"<=\" expected"; break;
-			case 21: s = "\">=\" expected"; break;
-			case 22: s = "\"struct\" expected"; break;
-			case 23: s = "\";\" expected"; break;
+			case 7: s = "\"*\" expected"; break;
+			case 8: s = "\"/\" expected"; break;
+			case 9: s = "\"void\" expected"; break;
+			case 10: s = "\"(\" expected"; break;
+			case 11: s = "\")\" expected"; break;
+			case 12: s = "\"{\" expected"; break;
+			case 13: s = "\"}\" expected"; break;
+			case 14: s = "\"=\" expected"; break;
+			case 15: s = "\"<\" expected"; break;
+			case 16: s = "\">\" expected"; break;
+			case 17: s = "\"!=\" expected"; break;
+			case 18: s = "\"<=\" expected"; break;
+			case 19: s = "\">=\" expected"; break;
+			case 20: s = "\"struct\" expected"; break;
+			case 21: s = "\";\" expected"; break;
+			case 22: s = "\"[\" expected"; break;
+			case 23: s = "\"]\" expected"; break;
 			case 24: s = "\"};\" expected"; break;
 			case 25: s = "\":=\" expected"; break;
 			case 26: s = "\"?\" expected"; break;
 			case 27: s = "\":\" expected"; break;
 			case 28: s = "\"if\" expected"; break;
 			case 29: s = "\"else\" expected"; break;
-			case 30: s = "\"while\" expected"; break;
-			case 31: s = "\"for\" expected"; break;
-			case 32: s = "\"read\" expected"; break;
-			case 33: s = "\"write\" expected"; break;
-			case 34: s = "\",\" expected"; break;
-			case 35: s = "\"program\" expected"; break;
-			case 36: s = "\"int\" expected"; break;
-			case 37: s = "\"bool\" expected"; break;
-			case 38: s = "\"const\" expected"; break;
-			case 39: s = "\"external\" expected"; break;
-			case 40: s = "\"procedure\" expected"; break;
-			case 41: s = "??? expected"; break;
-			case 42: s = "invalid AddOp"; break;
-			case 43: s = "invalid RelOp"; break;
-			case 44: s = "invalid Factor"; break;
-			case 45: s = "invalid MulOp"; break;
-			case 46: s = "invalid VarDecl"; break;
-			case 47: s = "invalid StructDecl"; break;
-			case 48: s = "invalid StructDecl"; break;
-			case 49: s = "invalid Stat"; break;
-			case 50: s = "invalid Stat"; break;
-			case 51: s = "invalid Stat"; break;
-			case 52: s = "invalid Type"; break;
-			case 53: s = "invalid SimpleAssignment"; break;
-			case 54: s = "invalid ExternDecl"; break;
+			case 30: s = "\"switch\" expected"; break;
+			case 31: s = "\"case\" expected"; break;
+			case 32: s = "\"break;\" expected"; break;
+			case 33: s = "\"default\" expected"; break;
+			case 34: s = "\"while\" expected"; break;
+			case 35: s = "\"for\" expected"; break;
+			case 36: s = "\"read\" expected"; break;
+			case 37: s = "\"write\" expected"; break;
+			case 38: s = "\",\" expected"; break;
+			case 39: s = "\"program\" expected"; break;
+			case 40: s = "\"int\" expected"; break;
+			case 41: s = "\"bool\" expected"; break;
+			case 42: s = "\"const\" expected"; break;
+			case 43: s = "\"external\" expected"; break;
+			case 44: s = "\"procedure\" expected"; break;
+			case 45: s = "??? expected"; break;
+			case 46: s = "invalid AddOp"; break;
+			case 47: s = "invalid RelOp"; break;
+			case 48: s = "invalid Factor"; break;
+			case 49: s = "invalid MulOp"; break;
+			case 50: s = "invalid VarDecl"; break;
+			case 51: s = "invalid StructDecl"; break;
+			case 52: s = "invalid StructDecl"; break;
+			case 53: s = "invalid Stat"; break;
+			case 54: s = "invalid Stat"; break;
+			case 55: s = "invalid Stat"; break;
+			case 56: s = "invalid Type"; break;
+			case 57: s = "invalid SimpleAssignment"; break;
+			case 58: s = "invalid ExternDecl"; break;
 
 			default: s = "error " + n; break;
 		}

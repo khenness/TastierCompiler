@@ -292,10 +292,10 @@ AddOp<out Instruction inst>
 
 /*------------------------------------------------------------------------*/
 
-Expr<out TastierType type>      (.  TastierType type1; Instruction inst; .)
-= SimExpr<out type>
+Expr<out TastierType type, string varname>      (. string varname1 ="";  TastierType type1; Instruction inst; .)
+= SimExpr<out type, varname>
   [ RelOp<out inst>
-    SimExpr<out type1>          (.
+    SimExpr<out type1, varname1>          (.
                                     if (type != type1) {
                                       SemErr("incompatible types");
                                     }
@@ -308,7 +308,7 @@ Expr<out TastierType type>      (.  TastierType type1; Instruction inst; .)
 
 /*------------------------------------------------------------------------*/
 
-Factor<out TastierType type>    (.  int n; Symbol sym; string name; .)
+Factor<out TastierType type, string varname>    (. string varname1 =""; int n; Symbol sym; string name; .)
 =                               (.  type = TastierType.Undefined; .)
   ( Ident<out name>             (.
                                     bool isExternal = false; //CS3071 students can ignore external declarations, since they only deal with compilation of single files.
@@ -319,7 +319,7 @@ Factor<out TastierType type>    (.  int n; Symbol sym; string name; .)
                                     }
 
                                     if (sym == null) {
-                                      SemErr("reference to undefined variable " + name);
+                                      SemErr("reference to undefined variable " + name+"  [Factor nonterminal]");
                                     }
                                     else {
                                       type = (TastierType)sym.Item3;
@@ -330,11 +330,15 @@ Factor<out TastierType type>    (.  int n; Symbol sym; string name; .)
                                               // if the symbol is external, we load it by name. The linker will resolve the name to an address.
                                             } else {
                                               program.Add(new Instruction("", "LoadG " + (sym.Item5+3)));
+                                               //here
+
                                             }
                                         } else {
                                             int lexicalLevelDifference = Math.Abs(openScopes.Count - sym.Item4)-1;
                                             program.Add(new Instruction("", "Load " + lexicalLevelDifference + " " + sym.Item5));
-                                        }
+                                              //here
+
+                                         }
                                       } else SemErr("variable expected");
                                     }
                                 .)
@@ -344,7 +348,7 @@ Factor<out TastierType type>    (.  int n; Symbol sym; string name; .)
                                     type = TastierType.Integer;
                                 .)
   | '-'
-    Factor<out type>            (.
+    Factor<out type, varname1>            (.
                                     if (type != TastierType.Integer) {
                                       SemErr("integer type expected");
                                       type = TastierType.Integer;
@@ -491,10 +495,10 @@ RelOp<out Instruction inst>
 
 /*------------------------------------------------------------------------*/
 
-SimExpr<out TastierType type>   (.  TastierType type1; Instruction inst; .)
-= Term<out type>
+SimExpr<out TastierType type, string varname>   (. string varname1=""; TastierType type1; Instruction inst; .)
+= Term<out type, varname>
   { AddOp<out inst>
-    Term<out type1>             (.
+    Term<out type1, varname1>             (.
                                     if (type != TastierType.Integer || type1 != TastierType.Integer) {
                                       SemErr("integer type expected");
                                     }
@@ -710,7 +714,7 @@ number                           (.
 
 // Used only in my "for" loop. Its just a "Stat" with the non-assignment stuff taken out. 
 
-SimpleAssignment                (.  string newname; TastierType type; string name; Symbol sym; bool external = false;  bool isExternal = false; .)
+SimpleAssignment                (.  string varname=""; string newname; TastierType type; string name; Symbol sym; bool external = false;  bool isExternal = false; .)
 
 
 = Ident<out name>   
@@ -738,7 +742,7 @@ SimpleAssignment                (.  string newname; TastierType type; string nam
                                       SemErr("cannot assign to non-variable");
                                     }
                                 .)
-    Expr<out type> ';'
+    Expr<out type,  varname> ';'
                                 (.
                                     if (type != (TastierType)sym.Item3) {
                                       SemErr("incompatible types");  //=
@@ -772,7 +776,7 @@ SimpleAssignment                (.  string newname; TastierType type; string nam
 
 
 
-Stat                            (.  string newname; TastierType type; TastierType typeA; TastierType typeB;  string name =""; Symbol sym; bool external = false; bool isExternal = false; .)
+Stat                            (.  string varname = ""; string newname; TastierType type; TastierType typeA; TastierType type1;  TastierType typeB;  string name =""; Symbol sym; bool external = false; bool isExternal = false; .)
 
 = Ident<out name>
 
@@ -793,7 +797,7 @@ Stat                            (.  string newname; TastierType type; TastierTyp
                                     }
                                 .)
    
-   Expr<out type> ( ';'
+   Expr<out type, name> ( ';'
                                 (.
                                     if (type != (TastierType)sym.Item3) {
                                       SemErr("incompatible types");  //=
@@ -833,7 +837,7 @@ Stat                            (.  string newname; TastierType type; TastierTyp
                                     
                                   .)
 
- Expr<out typeA>  ':'          (.
+ Expr<out typeA, varname>  ':'          (.
                                  
                                  //assign ident to typeA
                                  if (typeA != (TastierType)sym.Item3) {
@@ -858,7 +862,7 @@ Stat                            (.  string newname; TastierType type; TastierTyp
                                  program.Add(new Instruction(elselabel, "Nop"));
 
                                 .)
- Expr<out typeB> ';' 
+ Expr<out typeB, varname> ';' 
                                 (.
                                  //assign ident to typeB
                                  if (typeB != (TastierType)sym.Item3) {
@@ -897,7 +901,7 @@ Stat                            (.  string newname; TastierType type; TastierTyp
   )
 
 | "if"
-  '(' Expr<out type> ')'        (.
+  '(' Expr<out type,  varname> ')'        (.
                                     if ((TastierType)type != TastierType.Boolean) {
                                       SemErr("boolean type expected");
                                     }
@@ -919,11 +923,46 @@ Stat                            (.  string newname; TastierType type; TastierTyp
         Stat
       ]                         (.  program.Add(new Instruction(openLabels.Pop(), "Nop")); .)
 
-| "while"                       (.  string loopStartLabel = generateLabel();
+| "switch" '('  Expr<out type,  varname>   ')' '{'   (.
+ 
+                                                      openLabels.Push(generateLabel());
+                                                    .) 
+{
+ "case"  Expr<out type1,  varname>   ':'               (.
+
+                                                      if (type != type1){ 
+                                                         SemErr("incompatible types in switch statement");
+                                                      }
+                                                      openLabels.Push(generateLabel());
+                                                      program.Add(new Instruction("", "Equ"));
+                                                       program.Add(new Instruction("", "FJmp " + openLabels.Peek())); 
+                                                     .)
+ Stat [{ VarDecl<external>  | StructDecl<external>}]  (. 
+                                                      string label = openLabels.Pop();
+                                                       program.Add(new Instruction("", "Jmp " + openLabels.Peek() ));
+                                                       program.Add(new Instruction(label, "Nop"));
+
+                                                     .)
+
+ "break;"
+}
+
+[
+ "default" ':'
+
+ Stat [{ VarDecl<external>  | StructDecl<external>}]                                                        
+
+ "break;"
+]
+
+
+'}' (.  program.Add(new Instruction(openLabels.Pop(), "Nop"));  .)
+
+|"while"                       (.  string loopStartLabel = generateLabel();
                                     openLabels.Push(generateLabel()); //second label is for the loop end
                                     program.Add(new Instruction(loopStartLabel, "Nop"));
                                 .)
-  '(' Expr<out type> ')'        (.
+  '(' Expr<out type,  varname> ')'        (.
                                     if ((TastierType)type != TastierType.Boolean) {
                                       SemErr("boolean type expected");
                                     }
@@ -941,7 +980,7 @@ Stat                            (.  string newname; TastierType type; TastierTyp
                                     openLabels.Push(generateLabel()); //second label is for the loop end
                                     program.Add(new Instruction(loopStartLabel, "Nop"));
                                 .)
-   Expr<out type>             
+   Expr<out type, varname>             
                                
                                
 
@@ -1002,7 +1041,25 @@ Stat                            (.  string newname; TastierType type; TastierTyp
                                 .)
 
 | "write"
-  Expr<out type>               (.
+ /* Ident<out name>           (.
+                              Symbol mysym = lookup(openScopes, name);
+                              if(mysym == null){
+                                //comeback
+                              }
+                              if(mysym == null){
+                                 SemErr("ERROR - symbol '"+name+"' not found.");
+                              }
+                              if(mysym.Item3 == (int)TastierType.Integer){
+                                 program.Add(new Instruction("", "Write"));
+                              }else if(mysym.Item3 == (int)TastierType.Boolean){
+                                 program.Add(new Instruction("", "Write"));
+                              }
+                            .)
+
+';'*/ 
+
+
+  Expr<out type, varname>               (.
 
                                     if (type != TastierType.Integer) {
                                       SemErr("integer type expected");
@@ -1011,7 +1068,7 @@ Stat                            (.  string newname; TastierType type; TastierTyp
                                 .)
 
 {
-  ',' Expr<out type>             (.
+  ',' Expr<out type,  varname>             (.
                                      if (type != TastierType.Integer) {
                                        SemErr("integer type expected");
                                      }
@@ -1170,10 +1227,10 @@ Tastier                         (.  string name; bool external = false; .)
 
 /*------------------------------------------------------------------------*/
 
-Term<out TastierType type>      (.  TastierType type1; Instruction inst; .)
-= Factor<out type>
+Term<out TastierType type, string varname>      (. string varname1 =""; TastierType type1; Instruction inst; .)
+= Factor<out type, varname>
   { MulOp<out inst>
-    Factor<out type1>           (.
+    Factor<out type1, varname1>           (.
                                     if (type != TastierType.Integer ||
                                         type1 != TastierType.Integer) {
                                       SemErr("integer type expected");
@@ -1197,7 +1254,7 @@ Type<out TastierType type>
 //you only get one of these per program, thats what i've decided. You declare all your constants together.
 
 ConstDecl<bool external>        (. 
-                                  string name; TastierType type; Scope currentScope = openScopes.Peek(); Symbol sym; 
+                                  string varname =""; string name; TastierType type; Scope currentScope = openScopes.Peek(); Symbol sym; 
                                 .)
 = "const"
   Type<out type>
@@ -1214,7 +1271,7 @@ ConstDecl<bool external>        (.
                                       SemErr("cannot assign to non-variable");
                                     }
                                 .)
-    Expr<out type>
+    Expr<out type,  varname>
                                 (.
                                     if (type != (TastierType)sym.Item3) {
                                       SemErr("incompatible types");
@@ -1245,7 +1302,7 @@ ConstDecl<bool external>        (.
                                       SemErr("cannot assign to non-variable");
                                     }
                                 .)
-    Expr<out type>
+    Expr<out type, varname>
                                 (.
                                     if (type != (TastierType)sym.Item3) {
                                       SemErr("incompatible types");

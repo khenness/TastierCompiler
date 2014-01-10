@@ -1,0 +1,8 @@
+program Test2 {
+  void Main() {
+    int i;
+    i := 42;
+    write i;
+  }
+}
+

@@ -1,0 +1,71 @@
+
+program MyProgram {
+   
+/*Struct declaration*/
+  
+  struct date {
+   int day;
+   int month;
+   int year;
+   bool publicholiday;
+  };
+ 
+  struct person {
+   int favouritenumber;
+   struct date birthday;
+  };
+
+  struct vehicle {
+   struct person owner;
+   struct date registrationdate;
+   int numberofwheels;
+  };
+
+  /*Attempt at function passing - defining a function with paramaters*/
+  /* doesnt work, always outputs 0*/
+  _int myfun( int writeme2){
+    write writeme2;
+  }
+  
+  _void Main() {
+     int  var;
+     var := 21;
+     int writeme;
+
+    /*switch statement*/
+
+     switch(var){
+       case 0:
+           writeme := 101;
+           break;
+       case 1:
+           writeme := 102;
+           break;
+       default:
+           writeme := 103;
+           break; 
+     }
+     write writeme;
+     struct date mydate;
+     
+   /*Array declaration */
+     int [2] myarray;
+     int [2][2][2] ia;
+     struct date [1][2] mydatearray; 
+    
+    /*array member usage*/
+         myarray[0] := 22 + mydatearray[0][1].day;
+         write myarray[0];
+    
+    /*struct member usage*/
+        mydate.day := 32;
+        mydate.day := mydate.day + mydate.day;
+        write mydate.day;
+
+    /*attempt at passing parameters*/
+     writeme := 41;
+     myfun(writeme);
+  }
+}
+
+

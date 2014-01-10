@@ -119,6 +119,8 @@ Dictionary<string, Dictionary<string, StructMember>> definedStructs = new Dictio
 /*arry code - for convenience we will keep a list of the names of all arrays declared in the program*/
 List<ArraySymbol> declaredArrays = new List<ArraySymbol>();
 
+/*storing extra info about functions*/
+List<FuncSymbol> declaredFuncs = new List<FuncSymbol>();
 
 Stack<Scope> openScopes = new Stack<Scope>();
 Scope externalDeclarations = new Scope();
@@ -430,20 +432,47 @@ MulOp<out Instruction inst>
 
 /*------------------------------------------------------------------------*/
 
-ProcDecl                        (.  string name; string label; Scope currentScope = openScopes.Peek(); int enterInstLocation = 0; bool external = false; .)
-= "void"
+ProcDecl                        (. int parameters=0; string returntypestring="";  string name1; TastierType returntype = TastierType.Undefined; string name; string label; Scope currentScope = openScopes.Peek(); int enterInstLocation = 0; bool external = false; .)
+= '_' ( "void" | Type<out returntype>) 
+
+                                 (. /*void is represented by 'TastierType.Undefined'*/
+                                     if(returntype == TastierType.Undefined ){
+                                         returntypestring="void";
+                                     }else if(returntype == TastierType.Integer){
+                                         returntypestring="int";
+                                     }else if(returntype == TastierType.Boolean){
+                                         returntypestring="bool";
+  
+                                     }
+
+
+                                   .) 
   Ident<out name>               (.
                                     currentScope.Push(new Symbol(name, (int)TastierKind.Proc, (int)TastierType.Undefined, openScopes.Count, -1));
                                     openScopes.Push(new Scope());
                                     currentScope = openScopes.Peek();
+
+
                                 .)
-  '(' ')'
+  '(' 
+[  Type<out returntype>  Ident<out name1>        (.  parameters++; .) 
+  { 
+    ',' Type<out returntype>  Ident<out name1>        (.  parameters++; .)
+
+  }
+] 
+   ')'   (.
+               
+            declaredFuncs.Add(new FuncSymbol(name, parameters, returntypestring));
+
+         .)
   '{'                           (.
                                     program.Add(new Instruction("", "Enter 0"));
                                     enterInstLocation = program.Count - 1;
                                     label = generateProcedureName(name);
                                     openProcedureDeclarations.Push(name);
-                                    /*
+       
+                             /*
                                       Enter is supposed to have as an
                                       argument the next free address on the
                                       stack, but until we know how many

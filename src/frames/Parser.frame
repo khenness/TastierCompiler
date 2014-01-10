@@ -36,6 +36,7 @@ using StackAddress = System.Tuple<int, int>;
 using StructMember = System.Tuple<int, int>; /*type, kind*/
 using ArraySymbol = System.Tuple<string, string, int>; /*name, type (as a string - for structs the structname, 
                                                            else int or bool), dimensions*/
+using FuncSymbol = System.Tuple<string, int, string>; /*name, parameters, returntype*/
 
 
 -->namespace

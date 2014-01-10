@@ -1,3 +1,5 @@
+//structs with array members, switch statement, extra feature, report, comments
+
 COMPILER Tastier
 
 /*
@@ -360,32 +362,58 @@ Factor<out TastierType type>    (.  int n; Symbol sym; string name; .)
 
 
 Ident<out string name>             
-= ident                         (.  name = t.val;
-                               /*   
-                                    // WILL COME BACK - at present people can misuse the dot. eg: making an int a.b when there is no struct a. 
+= ident                         (. name = t.val; .)
+// ('[' Ident<out name1> ']')     ()
 
-                                    //find what struct you're talking about
-                                    string beforedot = "";
-                                    bool dotfound = false; 
-                                    foreach (char c in name){
-                                      if(c == '.'){
-                                         dotfound = true;
-                                      }else{
-                                        if(dotfound == false){
-                                           beforedot = beforedot+c;
-
-                                        }
+                          /*   (.      Scope currentScope = openScopes.Peek();
+                                   //rewrite the string array[someidentifer] as array[num]
+                                   Queue<int> myQueue = new Queue<int>();
+                                   int dimensions = 0; 
+                                   bool open= false;
+                                   string substring = "";
+                                   string newname = "";
+                                   for(int i =0; i< name.Length; i++){
+                                      if (open == false){
+                                         newname = newname+name[i];
                                       }
-                                    }
-                                    Console.WriteLine("beforedot = '"+beforedot+"'.");
-                                    //is beforedot a struct?
-                                    if( definedStructs.ContainsKey(beforedot)== true){
-                                       Console.WriteLine("'"+beforedot +"' is a struct");
-                                    }else{
-                                       Console.WriteLine("'"+beforedot +"' is not a struct");
-                                    }
-                              */
-                                .)
+                                      if(name[i] == '[' ){
+                                          open = true;
+                                      }
+                                      if(open == true){
+                                         if(name[i] != '[' | name[i] != ']'){
+                                           substring = substring+name[i];
+                                         }
+                                         if( name[i] == ']'){
+                                            open = false;
+                                            int numtowrite = 0;
+                                            //the substring might be a digit
+                                            bool wasnum = true;
+                                            foreach(char c in substring){
+                                               if(c.IsDigit() == false){
+                                                  wasnum = false;
+                                               }
+                                            }
+                                            if(wasnum == true){
+                                               newname = newname+substring;
+                                            }else{
+                                               //substring is an identifier
+                                               Symbol sym = lookup(openScopes, substring);
+                                               if (sym == null) {
+                                                   SemErr("reference to undefined variable " + substring);
+                                               }
+                                               if(sym.Item3 != TastierType.Integer){
+                                                  SemErr("Integer type expected for array index " + substring); 
+                                               }
+                                                //comeback
+                                                program.Add(new Instruction("", "LoadG " + (sym.Item5+3)));
+
+                                            }
+                                            newname = newname+name[i];
+                                         }
+                                      }
+                                      
+                                   }
+                                .)*/
 .
 
 /*------------------------------------------------------------------------*/
@@ -748,17 +776,6 @@ Stat                            (.  string newname; TastierType type; TastierTyp
 
 = Ident<out name>
 
-/*(
- '[' number ']'                        (.
-                                        int  n = Convert.ToInt32(t.val);
-                                        name = name + "["+n.ToString()+"]"; .)
-
-{
- '[' number ']'                        (.
-                                          n = Convert.ToInt32(t.val);
-                                        name = name + "["+n.ToString()+"]"; .)
-
-}   | )*/ 
 
                (.
                                     sym = lookup(openScopes, name);
@@ -792,6 +809,8 @@ Stat                            (.  string newname; TastierType type; TastierTyp
                                     else {
                                       int lexicalLevelDifference = Math.Abs(openScopes.Count - sym.Item4)-1; //=
                                       program.Add(new Instruction("", "Sto " + lexicalLevelDifference + " " + sym.Item5));
+                                      
+
                                     }
                                 .)
      //modified

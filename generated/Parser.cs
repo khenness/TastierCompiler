@@ -501,32 +501,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 
 	void Ident(out string name) {
 		Expect(2);
-		name = t.val;
-		/*   
-		// WILL COME BACK - at present people can misuse the dot. eg: making an int a.b when there is no struct a. 
-		
-		//find what struct you're talking about
-		string beforedot = "";
-		bool dotfound = false; 
-		foreach (char c in name){
-		 if(c == '.'){
-		    dotfound = true;
-		 }else{
-		   if(dotfound == false){
-		      beforedot = beforedot+c;
-		
-		   }
-		 }
-		}
-		Console.WriteLine("beforedot = '"+beforedot+"'.");
-		//is beforedot a struct?
-		if( definedStructs.ContainsKey(beforedot)== true){
-		  Console.WriteLine("'"+beforedot +"' is a struct");
-		}else{
-		  Console.WriteLine("'"+beforedot +"' is not a struct");
-		}
-		*/
-		
+		name = t.val; 
 	}
 
 	void MulOp(out Instruction inst) {
@@ -902,6 +877,8 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 					else {
 					 int lexicalLevelDifference = Math.Abs(openScopes.Count - sym.Item4)-1; //=
 					 program.Add(new Instruction("", "Sto " + lexicalLevelDifference + " " + sym.Item5));
+					 
+					
 					}
 					
 				} else if (la.kind == 26) {

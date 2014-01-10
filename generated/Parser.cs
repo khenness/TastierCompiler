@@ -691,14 +691,14 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			
 			
 			
+			
 			/*Algorithim to generate all array members*/
 			Dictionary<int, string> Dict = new Dictionary<int, string>();
 			for (int i =0; i< total; i++){
 			  Dict.Add(i, name);
 			}     
 			int beforeincrement = total;
-			for(int i =0; i< dimensions; i++){
-			    
+			for(int i =0; i< dimensions; i++){     
 			    int mynum = numElementsQueue.Dequeue();
 			     beforeincrement = (beforeincrement / (mynum+1));
 			    int writevalue = 0;
@@ -713,11 +713,12 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 			          count = 0;
 			       } 
 			       count++;
-			
 			       Dict[j] =  Dict[j] + "["+writevalue+"]";
-			
 			    }
 			}
+			
+			
+			
 			for(int i =0; i< total; i++){
 			 /*make a new symbol*/
 			Symbol mySym = new Symbol(Dict[i], (int)TastierKind.Var, (int)type, openScopes.Count-1,currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 == (int)TastierKind.Var));

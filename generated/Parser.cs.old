@@ -589,7 +589,7 @@ Symbol lookup(Stack<Scope> scopes, string name) {
 		   IS = PassIn.Pop();
 		  string i = IS.Item1;
 		  string i1 = IS.Item2;
-		  program.Add(new Instruction(i, i1));
+		 // program.Add(new Instruction(i, i1));
 		}
 		
 		

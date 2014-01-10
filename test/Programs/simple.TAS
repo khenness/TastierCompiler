@@ -23,32 +23,11 @@ program MyProgram {
 
  // }
   
-  void Main() {
-     int [4][2] ia;
-     struct vehicle [5][5] da;
+  _void Main() {
+     int [1][2][1] ia;
+     struct person [1][1] da;
      int nyc;
      nyc := 22;
-     switch(nyc){
-       case 32:
-           int we3;
-           we3 := 32;
-           break;
-       case 1:
-           break;
-       case 33:
-           break;
-       default:
-          break;
-     }
-     bool bol;
-     bol := true;
-     switch(bol){
-        case false: 
-
-           break;
-        default:
-          break;
-     }
      
    // struct date{} 
    // struct date mydate;
@@ -61,8 +40,8 @@ program MyProgram {
      int x;
      x := y;  
    // int ia[3][2];
-    ia[2][1] := 88;
-    write ia[3][1];
+//    ia[2][1] := 88;
+  //  write ia[3][1];
     bool mybool;
     kevin.birthday.day := 21;
     write kevin.birthday.day;
